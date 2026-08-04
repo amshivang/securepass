@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML Architecture — SecurePass</title>
+  <meta name="description" content="A detailed breakdown of the Random Forest ML model powering SecurePass password strength classification." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@200;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    /* ── ML page extras ── */
+    .ml-page { max-width: 820px; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--txt-muted); text-decoration: none;
+      transition: color 0.2s;
+      margin-bottom: 36px;
+    }
+    .back-link:hover { color: var(--red); }
+
+    .ml-hero { margin-bottom: 48px; }
+    .ml-hero-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(239,35,60,0.1); border: 1px solid rgba(239,35,60,0.25);
+      border-radius: 99px; padding: 5px 14px; margin-bottom: 18px;
+      font-size: 0.72rem; font-weight: 600; color: #fca5a5; letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    .ml-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 800; letter-spacing: -0.04em; line-height: 1.1;
+      background: linear-gradient(to bottom, #fff, rgba(255,255,255,0.5));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 14px;
+    }
+    .ml-subtitle { font-size: 0.95rem; color: var(--txt-muted); line-height: 1.7; max-width: 600px; }
+
+    /* Section */
+    .ml-section { margin-bottom: 40px; }
+    .ml-section-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em;
+      color: #fff; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ml-section-title span.num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(239,35,60,0.15); border: 1px solid rgba(239,35,60,0.3);
+      font-size: 0.75rem; font-weight: 700; color: var(--red); flex-shrink: 0;
+    }
+
+    /* Glass section box */
+    .ml-box {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px; padding: 24px 26px;
+    }
+    .ml-box p { font-size: 0.88rem; color: var(--txt-muted); line-height: 1.75; margin-bottom: 14px; }
+    .ml-box p:last-child { margin-bottom: 0; }
+
+    /* Pipeline diagram */
+    .pipeline {
+      display: flex; align-items: center; gap: 0;
+      flex-wrap: wrap; margin: 24px 0;
+    }
+    .pipe-step {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 14px 16px; text-align: center;
+      min-width: 120px; flex: 1;
+    }
+    .pipe-step-icon { font-size: 1.4rem; margin-bottom: 6px; }
+    .pipe-step-label { font-size: 0.72rem; font-weight: 700; color: var(--txt); text-transform: uppercase; letter-spacing: 0.06em; }
+    .pipe-step-sub   { font-size: 0.65rem; color: var(--txt-muted); margin-top: 3px; }
+    .pipe-arrow {
+      color: var(--red); font-size: 1.2rem; padding: 0 6px; flex-shrink: 0;
+    }
+
+    /* Feature table */
+    .feat-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .feat-table th {
+      text-align: left; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--red);
+      padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .feat-table td {
+      padding: 11px 12px; font-size: 0.83rem; color: var(--txt-muted);
+      border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top;
+    }
+    .feat-table td:first-child {
+      font-family: 'JetBrains Mono', monospace; color: #93c5fd; font-size: 0.8rem;
+    }
+    .feat-table tr:last-child td { border-bottom: none; }
+    .feat-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Code block */
+    .code-block {
+      background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 18px 20px; overflow-x: auto; margin-top: 14px;
+    }
+    .code-block code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem; color: #e2e8f0; line-height: 1.8;
+      white-space: pre;
+    }
+    .kw  { color: #f87171; }   /* keyword */
+    .fn  { color: #60a5fa; }   /* function */
+    .str { color: #86efac; }   /* string */
+    .cm  { color: #6b7280; }   /* comment */
+    .num { color: #fcd34d; }   /* number */
+
+    /* Metric cards */
+    .metric-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 18px; }
+    .metric-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px; padding: 18px; text-align: center;
+    }
+    .metric-val {
+      font-family: 'Manrope', sans-serif;
+      font-size: 2rem; font-weight: 800; color: var(--red); line-height: 1;
+      margin-bottom: 6px;
+    }
+    .metric-label { font-size: 0.72rem; color: var(--txt-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+
+    /* Improvements */
+    .improve-list { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+    .improve-list li {
+      display: flex; align-items: flex-start; gap: 12px;
+      font-size: 0.86rem; color: var(--txt-muted); line-height: 1.6;
+    }
+    .improve-list li .imp-tag {
+      flex-shrink: 0; font-size: 0.62rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 3px 8px; border-radius: 6px; margin-top: 2px;
+    }
+    .tag-red    { background: rgba(239,35,60,0.15);  color: #fca5a5; border: 1px solid rgba(239,35,60,0.25); }
+    .tag-blue   { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); }
+    .tag-green  { background: rgba(226,232,240,0.07); color: #e2e8f0;   border: 1px solid rgba(226,232,240,0.15); }
+    .tag-yellow { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.2); }
+
+    @media (max-width: 540px) {
+      .metric-row { grid-template-columns: 1fr 1fr; }
+      .pipeline { flex-direction: column; gap: 8px; }
+      .pipe-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="global-bg">
+    <div class="bg-base-grad"></div>
+    <div class="stars stars-sm"></div>
+    <div class="stars stars-md"></div>
+    <div class="red-blob"></div>
+    <div class="grid-overlay"></div>
+  </div>
+  <div class="top-blur"></div>
+
+  <!-- Navbar -->
+  <header class="navbar-shell">
+    <nav class="navbar">
+      <div class="nav-logo">
+        <div class="nav-diamond"></div>
+        <span class="nav-brand">SecurePass</span>
+      </div>
+      <div class="nav-status">
+        <span class="ping-wrap"><span class="ping-ring"></span><span class="ping-dot"></span></span>
+        <span class="nav-status-text">ML Engine Active</span>
+      </div>
+    </nav>
+  </header>
+
+  <div class="page-wrapper ml-page">
+
+    <!-- Back link -->
+    <a href="/" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Analyzer
+    </a>
+
+    <!-- Hero -->
+    <div class="ml-hero">
+      <div class="ml-hero-pill">🤖 Technical Deep-Dive</div>
+      <h1 class="ml-title">ML Architecture<br/>& Implementation</h1>
+      <p class="ml-subtitle">
+        SecurePass uses a <strong style="-webkit-text-fill-color:#fca5a5;color:#fca5a5">Random Forest Classifier</strong> trained on 3,600 synthetic passwords to classify password strength into three tiers. Here's exactly how it works — from raw text to prediction.
+      </p>
+      {% if model_name %}
+      <p style="margin-top:14px;font-size:0.8rem;color:var(--txt-muted);">
+        Active model: <span style="color:#e2e8f0;font-family:'JetBrains Mono',monospace">{{ model_name }}</span>
+      </p>
+      {% endif %}
+    </div>
+
+    <!-- Pipeline -->
+    <div class="ml-section">
+      <div class="ml-section-title"><span class="num">→</span> Full Pipeline</div>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="pipe-step-icon">⌨️</div><div class="pipe-step-label">Raw Password</div><div class="pipe-step-sub">Plain text string</div></div>
+        <div class="pipe-arrow">›</div>
+        <div class="pipe-step"><div class="pipe-step-icon">⚙️</div><div class="pipe-step-label">Feature Extraction</div><div class="pipe-step-sub">7 numeric features</div></div>
+        <div class="pipe-arrow">›</div>
+        <div class="pipe-step"><div class="pipe-step-icon">🌲</div><div class="pipe-step-label">Random Forest</div><div class="pipe-step-sub">100 decision trees</div></div>
+        <div class="pipe-arrow">›</div>
+        <div class="pipe-step"><div class="pipe-step-icon">📊</div><div class="pipe-step-label">predict_proba()</div><div class="pipe-step-sub">Confidence per class</div></div>
+        <div class="pipe-arrow">›</div>
+        <div class="pipe-step"><div class="pipe-step-icon">🏷️</div><div class="pipe-step-label">Label + Score</div><div class="pipe-step-sub">Weak / Medium / Strong</div></div>
+      </div>
+    </div>
+
+    <!-- Feature Engineering -->
+    <div class="ml-section">
+      <div class="ml-section-title"><span class="num">1</span> Feature Engineering</div>
+      <div class="ml-box">
+        <p>The raw password string is converted into a 7-dimensional numeric vector. Each dimension captures a distinct security-relevant property. The model never sees the original characters — only these features.</p>
+        <table class="feat-table">
+          <thead>
+            <tr><th>Feature</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>length</td><td>Integer</td><td>Total number of characters</td></tr>
+            <tr><td>has_upper</td><td>Binary 0/1</td><td>Contains at least one uppercase letter (A–Z)</td></tr>
+            <tr><td>has_lower</td><td>Binary 0/1</td><td>Contains at least one lowercase letter (a–z)</td></tr>
+            <tr><td>has_digit</td><td>Binary 0/1</td><td>Contains at least one digit (0–9)</td></tr>
+            <tr><td>has_symbol</td><td>Binary 0/1</td><td>Contains at least one non-alphanumeric character</td></tr>
+            <tr><td>entropy</td><td>Float (bits)</td><td>Shannon entropy — measures unpredictability of character distribution</td></tr>
+            <tr><td>unique_ratio</td><td>Float 0–1</td><td>Ratio of unique characters to total length — penalises repetition</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Shannon Entropy -->
+    <div class="ml-section">
+      <div class="ml-section-title"><span class="num">2</span> Shannon Entropy</div>
+      <div class="ml-box">
+        <p>Shannon entropy measures how unpredictable or random a password is. It is calculated using the frequency of each character:</p>
+        <div class="code-block"><code><span class="kw">def</span> <span class="fn">shannon_entropy</span>(password):
+    freq = {}
+    <span class="kw">for</span> c <span class="kw">in</span> password:
+        freq[c] = freq.get(c, <span class="num">0</span>) + <span class="num">1</span>
+    n = <span class="fn">len</span>(password)
+    <span class="kw">return</span> -<span class="fn">sum</span>((cnt/n) * <span class="fn">log2</span>(cnt/n) <span class="kw">for</span> cnt <span class="kw">in</span> freq.values())</code></div>
+        <p style="margin-top:14px">A password like <code style="color:#fcd34d;font-family:monospace">"aaaaaaa"</code> has entropy ≈ 0 bits (completely predictable). A truly random 12-character password using all character classes reaches ≈ 5–6 bits per character — making brute-force computationally infeasible.</p>
+      </div>
+    </div>
+
+    <!-- Random Forest -->
+    <div class="ml-section">
+      <div class="ml-section-title"><span class="num">3</span> Random Forest Classifier</div>
+      <div class="ml-box">
+        <p>A <strong style="color:#fff">Random Forest</strong> is an ensemble of 100 independent Decision Trees. Each tree is trained on a random subset of the 3,600 training passwords (bootstrap sampling), and each split considers a random subset of the 7 features. This controlled randomness prevents overfitting and improves generalisation.</p>
+        <p>At prediction time, every tree independently votes for a class (Weak / Medium / Strong). The final prediction is a majority vote, and <code style="color:#93c5fd;font-family:monospace">predict_proba()</code> returns the fraction of trees that voted for each class — used directly as the confidence score.</p>
+        <div class="code-block"><code><span class="kw">from</span> sklearn.ensemble <span class="kw">import</span> RandomForestClassifier
+
+clf = <span class="fn">RandomForestClassifier</span>(
+    n_estimators=<span class="num">100</span>,   <span class="cm"># 100 decision trees</span>
+    max_depth=<span class="kw">None</span>,        <span class="cm"># Trees grow until leaves are pure</span>
+    min_samples_split=<span class="num">4</span>,  <span class="cm"># At least 4 samples per split</span>
+    random_state=<span class="num">42</span>,      <span class="cm"># Reproducible results</span>
+    n_jobs=-<span class="num">1</span>             <span class="cm"># Use all CPU cores for training</span>
+)
+clf.fit(X_train, y_train)
+
+<span class="cm"># At runtime:</span>
+label      = [<span class="str">"Weak"</span>, <span class="str">"Medium"</span>, <span class="str">"Strong"</span>][clf.predict(X)[<span class="num">0</span>]]
+confidence = clf.predict_proba(X)[<span class="num">0</span>].max()  <span class="cm"># fraction of trees in agreement</span></code></div>
+      </div>
+    </div>
+
+    <!-- Training Data -->
+    <div class="ml-section">
+      <div class="ml-section-title"><span class="num">4</span> Training Dataset</div>
+      <div class="ml-box">
+        <p>Since distributing real leaked passwords is unethical, SecurePass uses a <strong style="color:#fff">synthetic dataset generator</strong> (<code style="font-family:monospace;color:#93c5fd">src/train_model.py</code>) that creates 3,600 balanced passwords across three classes:</p>
+        <div class="metric-row">
+          <div class="metric-card"><div class="metric-val" style="color:var(--weak)">1200</div><div class="metric-label">Weak Samples</div></div>
+          <div class="metric-card"><div class="metric-val" style="color:var(--medium)">1200</div><div class="metric-label">Medium Samples</div></div>
+          <div class="metric-card"><div class="metric-val" style="color:var(--strong)">1200</div><div class="metric-label">Strong Samples</div></div>
+        </div>
+        <p style="margin-top:16px">Labels are assigned using deterministic rules:       <span style="color:var(--weak)">Weak</span> if length &lt; 6 or entropy &lt; 1.8; <span style="color:#e2e8f0">Strong</span> if length ≥ 12, ≥ 3 character classes, and entropy ≥ 3.2; <span style="color:var(--medium)">Medium</span> otherwise. The dataset is split 80/20 for training and evaluation.</p>
+      </div>
+    </div>
+
+    <!-- Model Performance -->
+    <div class="ml-section">
+      <div class="ml-section-title"><span class="num">5</span> Model Performance</div>
+      <div class="ml-box">
+        <p>After training, the model is evaluated on the held-out 20% test set (720 passwords). Typical results:</p>
+        <div class="metric-row">
+          <div class="metric-card"><div class="metric-val">~97%</div><div class="metric-label">Test Accuracy</div></div>
+          <div class="metric-card"><div class="metric-val">~97%</div><div class="metric-label">F1-Score</div></div>
+          <div class="metric-card"><div class="metric-val">100</div><div class="metric-label">Decision Trees</div></div>
+        </div>
+        <p style="margin-top:16px">The model is regenerated each time <code style="font-family:monospace;color:#93c5fd">train_model.py</code> is run, and saved to <code style="font-family:monospace;color:#93c5fd">Data/model.pkl</code> using <code style="font-family:monospace;color:#93c5fd">joblib</code>. The Flask server loads it once at startup for fast, sub-millisecond inference.</p>
+      </div>
+    </div>
+
+    <!-- Suggested Improvements -->
+    <div class="ml-section">
+      <div class="ml-section-title"><span class="num">6</span> Suggested Improvements</div>
+      <div class="ml-box">
+        <ul class="improve-list">
+          <li><span class="imp-tag tag-red">High Impact</span><div><strong style="color:#fff">Have I Been Pwned API</strong> — Check passwords against 10+ billion breached credentials using k-Anonymity (only first 5 chars of the SHA-1 hash are sent over the network).</div></li>
+          <li><span class="imp-tag tag-blue">High Impact</span><div><strong style="color:#fff">zxcvbn Integration</strong> — Dropbox's open-source password estimator detects dictionary words, keyboard patterns (qwerty, 12345), dates, and repetitions that pure entropy misses.</div></li>
+          <li><span class="imp-tag tag-green">Medium</span><div><strong style="color:#fff">Real-World Training Data</strong> — Train the model on the publicly available RockYou dataset labels (without distributing the passwords) for a far more realistic decision boundary.</div></li>
+          <li><span class="imp-tag tag-yellow">Medium</span><div><strong style="color:#fff">Gradient Boosting (XGBoost)</strong> — Replace RandomForest with XGBoost or LightGBM for higher accuracy and built-in feature importance scores.</div></li>
+          <li><span class="imp-tag tag-blue">Low</span><div><strong style="color:#fff">API Rate Limiting</strong> — Add Flask-Limiter to prevent programmatic abuse of the <code style="font-family:monospace">/analyze</code> endpoint (e.g. limit to 60 req/min per IP).</div></li>
+          <li><span class="imp-tag tag-green">Low</span><div><strong style="color:#fff">Password Generator</strong> — After detecting a weak password, offer to generate a cryptographically secure replacement using <code style="font-family:monospace">secrets.token_urlsafe()</code>.</div></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" style="padding-top:20px">
+      <div class="social-links" style="margin-bottom: 20px;">
+        <a href="mailto:linkwithshivang@gmail.com" class="social-icon" aria-label="Email" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        </a>
+        <a href="https://www.linkedin.com/in/amshivang/" class="social-icon" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+        </a>
+        <a href="https://github.com/amshivang" class="social-icon" aria-label="GitHub" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+        </a>
+      </div>
+      <p class="footer-copy">SecurePass &nbsp;·&nbsp; Random Forest Classifier &nbsp;·&nbsp; scikit-learn</p>
+    </footer>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables (never upload secrets!)
+.env
+.flaskenv
+
+# IDE and Editor folders
+.vscode/
+.idea/
+*.swp
+*.code-workspace
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# ML Model Data (Best practice: don't track generated binaries in git)
+Data/model.pkl
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

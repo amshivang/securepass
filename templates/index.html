@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecurePass — Password Security Analyzer</title>
+  <meta name="description" content="ML-powered password strength analyzer — evaluate security, estimate crack time, and get expert improvement tips." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@200;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ── Global Background ── -->
+  <div class="global-bg">
+    <div class="bg-base-grad"></div>
+    <div class="stars stars-sm"></div>
+    <div class="stars stars-md"></div>
+    <div class="red-blob"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <!-- Top gradient blur -->
+  <div class="top-blur"></div>
+
+  <!-- ── Navbar ── -->
+  <header class="navbar-shell">
+    <nav class="navbar">
+      <div class="nav-logo">
+        <div class="nav-diamond"></div>
+        <span class="nav-brand">SecurePass</span>
+      </div>
+      <div class="nav-status">
+        <span class="ping-wrap">
+          <span class="ping-ring"></span>
+          <span class="ping-dot"></span>
+        </span>
+        <span class="nav-status-text">ML Engine Active</span>
+      </div>
+    </nav>
+  </header>
+
+  <div class="page-wrapper">
+
+    <!-- ── Hero ── -->
+    <section class="hero">
+      <div class="hero-pill">
+        <span class="pill-ping-wrap">
+          <span class="pill-ping-ring"></span>
+          <span class="pill-ping-dot"></span>
+        </span>
+        <span>Intelligent Password Security Analysis</span>
+      </div>
+
+      <h1 class="hero-title">
+        <span class="hero-title-line">Analyze Your</span>
+        <span class="hero-title-line">Password
+          <span class="hero-accent">Security
+            <svg class="accent-underline" viewBox="0 0 100 10" preserveAspectRatio="none">
+              <path d="M0 7 Q 50 12 100 7" stroke="#ef233c" stroke-width="2.5" fill="none" opacity="0.7"/>
+            </svg>
+          </span>
+        </span>
+      </h1>
+
+      <p class="hero-sub">
+        Real-time ML classification · Blacklist &amp; leet-speak detection · Brute-force estimation · Smart advice
+      </p>
+    </section>
+
+    <!-- ── Analyzer Card ── -->
+    <main class="card" id="mainCard">
+
+      <!-- Password Input -->
+      <div class="input-group">
+        <label class="field-label" for="passwordInput">Enter your password</label>
+        <div class="input-row">
+          <span class="input-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <input
+            id="passwordInput"
+            type="password"
+            class="pw-input"
+            placeholder="Type any password to analyze…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="toggleVisibility" class="icon-btn" title="Show / Hide" aria-label="Toggle password visibility">
+            <svg id="eyeOpen" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="eyeClosed" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+
+        <!-- Strength bar -->
+        <div class="strength-wrap" id="strengthBarWrap">
+          <div class="strength-track">
+            <div class="strength-fill" id="strengthFill"></div>
+          </div>
+          <div class="strength-meta">
+            <span class="strength-tag" id="strengthTag">—</span>
+            <span class="strength-pct" id="strengthPct">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Common password warning -->
+      <div class="alert alert-danger" id="commonBanner" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>This is a commonly known password — extremely vulnerable to dictionary attacks!</span>
+      </div>
+
+      <!-- Advice -->
+      <div class="advice-block" id="adviceBlock" style="display:none">
+        <div class="advice-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Agent's Optimization Plan
+        </div>
+        <ul class="advice-list" id="adviceList"></ul>
+      </div>
+
+      <!-- All good -->
+      <div class="alert alert-success" id="allGoodBanner" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Excellent! This password meets all security criteria.</span>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-row" id="statsRow" style="display:none">
+        <div class="stat-card" id="statLabel">
+          <div class="stat-icon" id="statLabelIcon">🔒</div>
+          <div class="stat-value" id="statLabelValue">—</div>
+          <div class="stat-title">Strength</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏱</div>
+          <div class="stat-value" id="statCrack">—</div>
+          <div class="stat-title">Time to Crack</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-value" id="statScore">—</div>
+          <div class="stat-title">Score</div>
+        </div>
+      </div>
+
+    </main><!-- /card -->
+
+    <!-- ── Feature Bento ── -->
+    <section class="features-section">
+      <div class="features-header">
+        <h2 class="features-title">How <span class="hero-accent">SecurePass<svg class="accent-underline" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 7 Q 50 12 100 7" stroke="#ef233c" stroke-width="2.5" fill="none" opacity="0.7"/></svg></span> Works</h2>
+        <p class="features-sub">Four layers of security intelligence — working in real time as you type.</p>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Card 1 — ML Classification (now equal size, links to /ml-architecture) -->
+        <div class="bento-card">
+          <div class="bento-icon red">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3 class="bento-title">ML Classification</h3>
+          <p class="bento-desc">A trained Random Forest model with 7 engineered features — length, entropy, character classes, and uniqueness ratio — classifies passwords into Weak, Medium, or Strong.</p>
+          <a href="/ml-architecture" class="bento-footer">
+            <span class="bento-tag">EXPLORE</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef233c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <div class="bento-hover-glow red-glow-hover"></div>
+        </div>
+
+        <!-- Card 2 — Blacklist -->
+        <div class="bento-card">
+          <div class="bento-icon blue">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3 class="bento-title">Blacklist + Leet Detection</h3>
+          <p class="bento-desc">Cross-references against known bad passwords and normalises leet-speak variants (p@ssw0rd → password) to catch sneaky substitutions.</p>
+          <div class="bento-hover-glow blue-glow-hover"></div>
+        </div>
+
+        <!-- Card 3 — Crack Time -->
+        <div class="bento-card">
+          <div class="bento-icon yellow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 class="bento-title">Crack Time</h3>
+          <p class="bento-desc">Estimates brute-force time at 100 billion guesses/sec — from instantly to the heat death of the universe.</p>
+          <div class="bento-hover-glow yellow-glow-hover"></div>
+        </div>
+
+        <!-- Card 4 — Smart Advice -->
+        <div class="bento-card">
+          <div class="bento-icon purple">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+          </div>
+          <h3 class="bento-title">Smart Advice</h3>
+          <p class="bento-desc">Identifies exactly what's missing — uppercase, digits, symbols, length — and tells you precisely how to fix it.</p>
+          <div class="bento-hover-glow purple-glow-hover"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Red Banner ── -->
+    <div class="red-banner">
+      <p class="red-banner-quote">"A strong password is your first line of defence. Make it count."</p>
+      <p class="red-banner-sub">SecurePass analyses it in milliseconds — so attackers can't crack it in millennia.</p>
+    </div>
+
+    <!-- ── Footer ── -->
+    <footer class="footer">
+      <div class="footer-logo">
+        <div class="nav-diamond"></div>
+        <span class="nav-brand">SecurePass</span>
+      </div>
+      <p class="footer-desc">ML-powered password intelligence — built to keep you safe.</p>
+
+      <div class="social-links">
+        <a href="mailto:linkwithshivang@gmail.com" class="social-icon" aria-label="Email" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        </a>
+        <a href="https://www.linkedin.com/in/amshivang/" class="social-icon" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+        </a>
+        <a href="https://github.com/amshivang" class="social-icon" aria-label="GitHub" target="_blank" rel="noopener noreferrer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+        </a>
+      </div>
+
+      <div class="footer-huge">SECUREPASS</div>
+      <p class="footer-copy">Python ML Engine &nbsp;·&nbsp; Real-time Analysis &nbsp;·&nbsp; Zero Data Stored</p>
+    </footer>
+
+  </div><!-- /page-wrapper -->
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
