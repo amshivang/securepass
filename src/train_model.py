@@ -1,6 +1,5 @@
 import random
 import string
-import math
 import os
 import sys
 
@@ -13,46 +12,30 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import joblib
 
-
-# ── Feature extraction ──────────────────────────────────────────────────────
-
-def shannon_entropy(password: str) -> float:
-    if not password:
-        return 0.0
-    freq: dict = {}
-    for c in password:
-        freq[c] = freq.get(c, 0) + 1
-    entropy = 0.0
-    n = len(password)
-    for count in freq.values():
-        p = count / n
-        entropy -= p * math.log2(p)
-    return entropy
+import features as feat
 
 
-def extract_features(password: str) -> list:
-    """Return a 7-element feature vector."""
-    n = len(password)
-    has_upper  = int(any(c.isupper() for c in password))
-    has_lower  = int(any(c.islower() for c in password))
-    has_digit  = int(any(c.isdigit() for c in password))
-    has_symbol = int(any(not c.isalnum() for c in password))
-    entropy    = shannon_entropy(password)
-    unique_r   = len(set(password)) / n if n > 0 else 0.0
-    return [n, has_upper, has_lower, has_digit, has_symbol, entropy, unique_r]
-
+# ── Ground-truth labelling ──────────────────────────────────────────────────
 
 def rule_label(password: str) -> int:
-    """Ground-truth label: 0=Weak, 1=Medium, 2=Strong."""
-    n = len(password)
-    has_upper  = any(c.isupper() for c in password)
-    has_lower  = any(c.islower() for c in password)
-    has_digit  = any(c.isdigit() for c in password)
-    has_symbol = any(not c.isalnum() for c in password)
-    entropy    = shannon_entropy(password)
-    char_types = sum([has_upper, has_lower, has_digit, has_symbol])
+    """Ground-truth label: 0=Weak, 1=Medium, 2=Strong.
 
-    if n < 6 or (n < 8 and char_types <= 1) or entropy < 1.8:
+    Structural red flags (keyboard walks, sequential runs, heavily repeated
+    characters) always force a Weak label, regardless of length or charset
+    variety — these are exactly the patterns that make a password *look*
+    complex while still being trivial for a dictionary/pattern-based
+    attacker to guess. This teaches the classifier to weight those features
+    rather than relying purely on length/entropy thresholds.
+    """
+    f = feat.extract_features(password)
+    n = f['length']
+    char_types = f['has_upper'] + f['has_lower'] + f['has_digit'] + f['has_symbol']
+    entropy = f['entropy']
+
+    if f['has_keyboard_walk'] or f['has_sequential_run'] or f['max_repeat_ratio'] >= 0.5:
+        return 0  # Weak
+
+    if n < 6 or (n <= 10 and char_types <= 1) or entropy < 1.8:
         return 0  # Weak
     if n >= 12 and char_types >= 3 and entropy >= 3.2:
         return 2  # Strong
@@ -61,7 +44,7 @@ def rule_label(password: str) -> int:
 
 # ── Synthetic password generators ───────────────────────────────────────────
 
-def gen_weak(n: int) -> list:
+def gen_weak(n: int) -> list[str]:
     out = []
     lc, dg = string.ascii_lowercase, string.digits
     templates = [
@@ -78,7 +61,62 @@ def gen_weak(n: int) -> list:
     return out
 
 
-def gen_medium(n: int) -> list:
+_DICTIONARY_WORDS = [
+    'password', 'letmein', 'welcome', 'monkey', 'dragon', 'sunshine', 'princess',
+    'football', 'baseball', 'superman', 'batman', 'trustno1', 'iloveyou', 'shadow',
+    'master', 'hunter', 'jennifer', 'jessica', 'michael', 'charlie', 'computer',
+    'internet', 'starwars', 'freedom', 'whatever', 'nicole', 'daniel', 'summer',
+    'winter', 'ginger', 'peanut', 'cookie', 'buster', 'ranger', 'soccer', 'tigger',
+    'hockey', 'flower', 'chicken', 'diamond', 'pepper', 'jordan', 'maggie', 'joshua',
+]
+
+
+def gen_dictionary_weak(n: int) -> list[str]:
+    """Plain dictionary-word-based passwords: single character class, short-
+    to-medium length. These sit close to the Weak/Medium boundary and need
+    enough training density so the classifier doesn't default to 'Medium'
+    just because the length looks reasonable."""
+    out = []
+    for _ in range(n):
+        word = random.choice(_DICTIONARY_WORDS)
+        variant = random.randint(0, 2)
+        if variant == 0:
+            out.append(word)
+        elif variant == 1:
+            out.append(word.capitalize())
+        else:
+            out.append(word + str(random.randint(0, 99)) if random.random() < 0.3 else word)
+    return out
+
+
+def gen_deceptive_weak(n: int) -> list[str]:
+    """Passwords that look complex (long, mixed-case, digits, symbols) but
+    are built from keyboard walks, sequential runs, or heavy repetition —
+    the kind of password a naive length/charset check would rate 'Strong'."""
+    out = []
+    kb_walks = ['qwerty', 'asdfgh', 'zxcvbn', 'qwertyuiop', 'asdfghjkl',
+                '1qaz2wsx', 'qazwsx', '1q2w3e4r']
+    seq_runs = ['abcdefgh', '12345678', '87654321', 'hgfedcba', '1234567890']
+    symbols = '!@#$%^&*'
+    for _ in range(n):
+        choice = random.randint(0, 3)
+        if choice == 0:
+            base = random.choice(kb_walks)
+            out.append(base.capitalize() + ''.join(random.choices(string.digits, k=random.randint(2, 4)))
+                       + random.choice(symbols))
+        elif choice == 1:
+            base = random.choice(seq_runs)
+            out.append(base.capitalize() + random.choice(symbols) * random.randint(1, 2))
+        elif choice == 2:
+            ch = random.choice(string.ascii_letters)
+            out.append(ch * random.randint(8, 14) + random.choice(string.digits) + random.choice(symbols))
+        else:
+            base = random.choice(kb_walks + seq_runs)
+            out.append(base.upper() + base.lower() + str(random.randint(0, 99)))
+    return out
+
+
+def gen_medium(n: int) -> list[str]:
     out = []
     for _ in range(n):
         length = random.randint(8, 11)
@@ -100,7 +138,7 @@ def gen_medium(n: int) -> list:
     return out
 
 
-def gen_strong(n: int) -> list:
+def gen_strong(n: int) -> list[str]:
     out = []
     symbols = '!@#$%^&*()-_=+[]{}|;:,.<>?'
     for _ in range(n):
@@ -121,11 +159,17 @@ def gen_strong(n: int) -> list:
 
 def main():
     print("[ 1/4 ] Generating synthetic password dataset...")
-    passwords = gen_weak(1200) + gen_medium(1200) + gen_strong(1200)
+    passwords = (
+        gen_weak(800)
+        + gen_dictionary_weak(400)
+        + gen_deceptive_weak(400)
+        + gen_medium(1200)
+        + gen_strong(1200)
+    )
     random.shuffle(passwords)
 
-    X = np.array([extract_features(pw) for pw in passwords])
-    y = np.array([rule_label(pw)       for pw in passwords])
+    X = np.array([feat.features_to_vector(pw) for pw in passwords])
+    y = np.array([rule_label(pw)               for pw in passwords])
 
     label_names = {0: "Weak", 1: "Medium", 2: "Strong"}
     for k, v in label_names.items():
@@ -156,16 +200,18 @@ def main():
 
     # Quick sanity checks
     tests = [
-        ("abc",                  "Weak"),
-        ("password",             "Weak"),
-        ("Hello123",             "Medium"),
-        ("MyP@ssw0rd!!Secure99", "Strong"),
+        ("abc",                    "Weak"),
+        ("password",               "Weak"),
+        ("Qwertyuiop123!",         "Weak"),   # deceptive: keyboard walk
+        ("Abcdefgh1234!",          "Weak"),   # deceptive: sequential run
+        ("Hello123",               "Medium"),
+        ("MyP@ssw0rd!!Secure99",   "Strong"),
     ]
     print("\nSanity checks:")
     for pw, expected in tests:
-        feat  = np.array([extract_features(pw)])
-        pred  = ["Weak", "Medium", "Strong"][clf.predict(feat)[0]]
-        proba = clf.predict_proba(feat)[0]
+        vec   = np.array([feat.features_to_vector(pw)])
+        pred  = ["Weak", "Medium", "Strong"][clf.predict(vec)[0]]
+        proba = clf.predict_proba(vec)[0]
         ok    = "[OK]" if pred == expected else "[X]"
         print(f"  {ok}  {pw!r:30s}  -> {pred:6s}  (confidence {max(proba)*100:.1f}%)")
 

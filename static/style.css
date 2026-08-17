@@ -292,6 +292,93 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(-50%) scale(0.92);
 }
 
+/* Input Toolbar (generate + copy) */
+.input-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.generate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+}
+
+.generate-btn:hover {
+  color: var(--text);
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+}
+
+.generate-btn:active {
+  transform: scale(0.98);
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+}
+
+.icon-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.icon-btn.copied {
+  color: var(--strong);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.generate-btn:disabled,
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.generate-btn:focus-visible,
+.icon-btn:focus-visible,
+.breach-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Inline analyze error */
+.input-error {
+  font-size: 0.75rem;
+  color: var(--weak);
+  margin-top: -8px;
+  margin-bottom: 16px;
+}
+
+.input-error[data-hidden="true"] {
+  display: none;
+}
+
 /* Strength Meter */
 .strength-section {
   display: flex;
@@ -331,6 +418,23 @@ h1, h2, h3, h4, h5, h6 {
 .strength-pct {
   color: var(--text-dim);
   font-family: 'JetBrains Mono', monospace;
+}
+
+.strength-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confidence-badge {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.75;
+}
+
+.confidence-badge:empty {
+  display: none;
 }
 
 .strength-bar-bg {
@@ -457,6 +561,59 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--strong);
 }
 .alert-success .banner-icon { color: var(--strong); }
+
+/* Breach Check */
+.breach-section {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.breach-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+}
+
+.breach-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.breach-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.breach-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.breach-btn.is-loading {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+.breach-hint {
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.breach-hint[data-hidden="true"] {
+  display: none;
+}
 
 /* Feature Bento Grid */
 .bento {

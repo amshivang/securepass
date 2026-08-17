@@ -6,11 +6,7 @@
   <title>SecurePass</title>
   <meta name="description" content="ML-powered password strength analyzer." />
   <link rel="stylesheet" href="/static/style.css" />
-  <script>
-    // Inline script to prevent FOUC (Flash of Unstyled Content)
-    const theme = localStorage.getItem("theme");
-    if (theme) document.documentElement.setAttribute("data-theme", theme);
-  </script>
+  <script src="/static/theme-init.js"></script>
 </head>
 <body>
   <div class="container">
@@ -59,12 +55,28 @@
           </button>
         </div>
 
+        <div class="input-toolbar">
+          <button id="generateBtn" type="button" class="generate-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span>Generate strong password</span>
+          </button>
+          <button id="copyBtn" type="button" class="icon-btn" aria-label="Copy password to clipboard" disabled>
+            <svg id="copyIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <svg id="checkIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+
+        <p class="input-error" id="inputError" data-hidden="true">Couldn't reach the analyzer. Check your connection and try again.</p>
+
         <!-- Strength Section -->
         <div class="strength-section" id="strengthSection" data-hidden="true">
           
           <div class="strength-header">
             <span class="strength-label" id="strengthTag">Strength</span>
-            <span class="strength-pct" id="strengthPct">0%</span>
+            <span class="strength-meta">
+              <span class="confidence-badge" id="confidenceBadge"></span>
+              <span class="strength-pct" id="strengthPct">0%</span>
+            </span>
           </div>
           
           <div class="strength-bar-bg">
@@ -106,6 +118,31 @@
           <div class="banner-content">
             <h4>Secure</h4>
             <p>This password meets all security criteria.</p>
+          </div>
+        </div>
+
+        <!-- Breach Check (opt-in, explicit) -->
+        <div class="breach-section">
+          <button id="breachBtn" type="button" class="breach-btn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span id="breachBtnText">Check known breaches</span>
+          </button>
+          <p class="breach-hint" id="breachNeutralMsg" data-hidden="true">Could not verify right now — check your connection.</p>
+        </div>
+
+        <div class="banner alert-danger" id="breachDangerBanner" data-hidden="true">
+          <svg class="banner-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div class="banner-content">
+            <h4>Found in Data Breaches</h4>
+            <p id="breachDangerText"></p>
+          </div>
+        </div>
+
+        <div class="banner alert-success" id="breachSafeBanner" data-hidden="true">
+          <svg class="banner-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div class="banner-content">
+            <h4>Not Found in Known Breaches</h4>
+            <p>This password wasn't found in the breach databases checked. That doesn't guarantee it's safe elsewhere.</p>
           </div>
         </div>
 
