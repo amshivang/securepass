@@ -25,10 +25,16 @@ class PasswordAgent:
 
     def _load_model(self):
         try:
-            self._model = joblib.load(self.MODEL_PATH)
+            model = joblib.load(self.MODEL_PATH)
+            if hasattr(model, 'n_features_in_') and model.n_features_in_ != len(self.FEATURE_NAMES):
+                print(f"[ML] Model feature mismatch (expected {len(self.FEATURE_NAMES)}, got {model.n_features_in_}). Retraining...")
+                import train_model
+                train_model.main()
+                model = joblib.load(self.MODEL_PATH)
+            self._model = model
             print(f"[ML] RandomForest model loaded from {self.MODEL_PATH}")
         except Exception as e:
-            print(f"[ML] Model not found, using heuristic fallback. ({e})")
+            print(f"[ML] Model not found or invalid, using heuristic fallback. ({e})")
             self._model = None
 
     @property
@@ -52,15 +58,19 @@ class PasswordAgent:
         Uses the RandomForest model when available, heuristic otherwise.
         """
         if self._model is not None:
-            X       = self._features_to_array(password)
-            idx     = self._model.predict(X)[0]           # 0/1/2
-            proba   = self._model.predict_proba(X)[0]     # per-class probability
-            labels  = ['Weak', 'Medium', 'Strong']
-            label   = labels[idx]
-            conf    = float(proba[idx])
-            # Map confidence to a score bucket: Weak≤4, Medium 4–9, Strong 9–15
-            buckets = {'Weak': conf * 4, 'Medium': 4 + conf * 5, 'Strong': 9 + conf * 6}
-            return label, round(buckets[label], 2), round(conf, 3)
+            try:
+                X       = self._features_to_array(password)
+                idx     = self._model.predict(X)[0]           # 0/1/2
+                proba   = self._model.predict_proba(X)[0]     # per-class probability
+                labels  = ['Weak', 'Medium', 'Strong']
+                label   = labels[idx]
+                conf    = float(proba[idx])
+                # Map confidence to a score bucket: Weak≤4, Medium 4–9, Strong 9–15
+                buckets = {'Weak': conf * 4, 'Medium': 4 + conf * 5, 'Strong': 9 + conf * 6}
+                return label, round(buckets[label], 2), round(conf, 3)
+            except Exception as e:
+                print(f"[ML] Inference failed ({e}), using heuristic fallback.")
+                return self._heuristic_predict(password)
         else:
             return self._heuristic_predict(password)
 

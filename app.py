@@ -14,8 +14,22 @@ logging.basicConfig(
 logger = logging.getLogger("securepass")
 
 model_path = os.path.join(os.path.dirname(__file__), "Data", "model.pkl")
-if not os.path.exists(model_path):
-    logger.info("Model not found. Training model now...")
+should_train = not os.path.exists(model_path)
+if not should_train:
+    try:
+        import joblib
+        import features as feat
+        loaded_model = joblib.load(model_path)
+        if hasattr(loaded_model, "n_features_in_") and loaded_model.n_features_in_ != len(feat.FEATURE_NAMES):
+            logger.info("Existing model feature count (%d) != expected (%d). Retraining...",
+                        loaded_model.n_features_in_, len(feat.FEATURE_NAMES))
+            should_train = True
+    except Exception as e:
+        logger.warning("Could not validate existing model (%s). Retraining...", e)
+        should_train = True
+
+if should_train:
+    logger.info("Training fresh model...")
     import train_model
     train_model.main()
 
