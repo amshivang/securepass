@@ -123,6 +123,6 @@ Validate RFC 6238 standard test vectors using secret `'GEZDGNBVGY3TQOJQGEZDGNBVG
 
 ## Done criteria
 
-- [ ] `npm test` passes all tests including TOTP test vectors.
-- [ ] Storing a 2FA secret generates the correct 6-digit rotating code.
-- [ ] 100% zero external dependencies used.
+- [x] `npm test` passes all tests including TOTP test vectors.
+- [x] Storing a 2FA secret generates the correct 6-digit rotating code.
+- [x] 100% zero external dependencies used.
