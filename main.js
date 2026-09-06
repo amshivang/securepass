@@ -6,7 +6,7 @@
 
 const { app, BrowserWindow, ipcMain, clipboard, shell } = require('electron');
 const path = require('path');
-const { CryptoVault } = require('./crypto-vault');
+const { CryptoVault, generateTOTP } = require('./crypto-vault');
 
 let mainWindow = null;
 let clipboardTimeout = null;
@@ -175,6 +175,16 @@ app.whenReady().then(() => {
   ipcMain.handle('vault:import-backup', async (_event, jsonString) => {
     try {
       return vault.importBackup(jsonString);
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  // IPC: Generate TOTP 2FA code
+  ipcMain.handle('vault:generate-totp', async (_event, secret) => {
+    try {
+      if (!secret) return null;
+      return CryptoVault.generateTOTP ? CryptoVault.generateTOTP(secret) : generateTOTP(secret);
     } catch (err) {
       return { error: err.message };
     }

@@ -441,6 +441,50 @@ body.app-body {
   white-space: nowrap;
 }
 
+.totp-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+
+.totp-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.totp-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+.totp-digits {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #fff;
+}
+
+.totp-countdown {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  min-width: 24px;
+  text-align: right;
+  transition: color var(--transition-fast);
+}
+
 .card-actions {
   display: flex;
   align-items: center;

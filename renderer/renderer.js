@@ -55,6 +55,7 @@ const itemTitle = document.getElementById('itemTitle');
 const itemUsername = document.getElementById('itemUsername');
 const itemPassword = document.getElementById('itemPassword');
 const itemUrl = document.getElementById('itemUrl');
+const itemTotp = document.getElementById('itemTotp');
 const itemNotes = document.getElementById('itemNotes');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const cancelModalBtn = document.getElementById('cancelModalBtn');
@@ -340,6 +341,19 @@ function renderVaultItems() {
             <span class="detail-value">${escapeHtml(item.url.replace(/^https?:\/\//, ''))}</span>
           </div>
         ` : ''}
+        ${item.totpSecret ? `
+          <div class="totp-card-row" data-totp-id="${item.id}" data-totp-secret="${escapeHtml(item.totpSecret)}">
+            <div class="totp-left">
+              <div class="totp-badge">2FA</div>
+              <div class="totp-digits" id="totp-code-${item.id}">------</div>
+              <div class="totp-countdown" id="totp-countdown-${item.id}">--s</div>
+            </div>
+            <button type="button" class="btn-card-action copy-totp-btn" data-id="${item.id}" title="Copy 2FA Code">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+        ` : ''}
       </div>
 
       <div class="card-actions">
@@ -356,6 +370,12 @@ function renderVaultItems() {
               <span>Password</span>
             </button>
           ` : ''}
+          ${item.totpSecret ? `
+            <button class="btn-card-action copy-totp-btn" data-id="${item.id}" title="Copy 2FA Code">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>2FA</span>
+            </button>
+          ` : ''}
         </div>
         <button class="btn-card-action edit-item-btn" data-id="${item.id}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -366,7 +386,51 @@ function renderVaultItems() {
 
     itemsList.appendChild(card);
   });
+
+  updateActiveTOTPCodes();
 }
+
+// -------------------------------------------------------------
+// TOTP 2FA Engine - Active Display & Countdown Timer
+// -------------------------------------------------------------
+async function updateActiveTOTPCodes() {
+  if (vaultView.style.display === 'none') return;
+  const totpRows = document.querySelectorAll('.totp-card-row');
+  if (totpRows.length === 0) return;
+
+  await Promise.all(Array.from(totpRows).map(async (row) => {
+    const id = row.dataset.totpId;
+    const secret = row.dataset.totpSecret;
+    if (!secret) return;
+
+    const codeEl = document.getElementById(`totp-code-${id}`);
+    const timerEl = document.getElementById(`totp-countdown-${id}`);
+    if (!codeEl || !timerEl) return;
+
+    try {
+      const res = await window.securePassAPI.vaultGenerateTOTP(secret);
+      if (res && res.code) {
+        codeEl.textContent = `${res.code.slice(0, 3)} ${res.code.slice(3)}`;
+        timerEl.textContent = `${res.remainingSeconds}s`;
+        if (res.remainingSeconds <= 5) {
+          timerEl.style.color = 'var(--weak)';
+        } else {
+          timerEl.style.color = 'var(--text-dim)';
+        }
+      } else if (res && res.error) {
+        codeEl.textContent = 'Invalid Key';
+        timerEl.textContent = '!';
+        timerEl.style.color = 'var(--weak)';
+      }
+    } catch (_err) {
+      codeEl.textContent = 'Error';
+      timerEl.textContent = '--';
+    }
+  }));
+}
+
+// 1-second interval to update any active TOTP displays and countdowns
+setInterval(updateActiveTOTPCodes, 1000);
 
 // Vault Event Listeners
 vaultSearchInput.addEventListener('input', (e) => {
@@ -404,6 +468,22 @@ itemsList.addEventListener('click', async (e) => {
     return;
   }
 
+  const copyTotpBtn = e.target.closest('.copy-totp-btn');
+  if (copyTotpBtn) {
+    const id = copyTotpBtn.dataset.id;
+    const item = state.items.find(i => i.id === id);
+    if (item && item.totpSecret) {
+      const res = await window.securePassAPI.vaultGenerateTOTP(item.totpSecret);
+      if (res && res.code) {
+        await window.securePassAPI.copyToClipboard(res.code, true);
+        showToast('2FA code copied! (Auto-clears in 30s)');
+      } else if (res && res.error) {
+        showToast(`2FA Error: ${res.error}`);
+      }
+    }
+    return;
+  }
+
   const editBtn = e.target.closest('.edit-item-btn');
   if (editBtn) {
     const id = editBtn.dataset.id;
@@ -434,12 +514,14 @@ function openItemModal(item = null) {
     itemUsername.value = item.username || '';
     itemPassword.value = item.password || '';
     itemUrl.value = item.url || '';
+    itemTotp.value = item.totpSecret || '';
     itemNotes.value = item.notes || '';
     updateModalStrength(item.password);
   } else {
     modalTitle.textContent = 'Add New Credential';
     itemForm.reset();
     itemId.value = '';
+    itemTotp.value = '';
     modalStrengthMeter.textContent = 'Strength: —';
     modalStrengthMeter.style.color = 'var(--text-dim)';
   }
@@ -464,6 +546,7 @@ itemForm.addEventListener('submit', async () => {
     username: itemUsername.value.trim(),
     password: itemPassword.value,
     url: itemUrl.value.trim(),
+    totpSecret: itemTotp.value.trim(),
     notes: itemNotes.value.trim()
   };
 

@@ -20,6 +20,58 @@ const KEY_LENGTH = 32; // 256 bits for AES-256
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12; // Standard 96-bit IV for AES-GCM
 
+/**
+ * Decode standard RFC 4648 Base32 string to Buffer.
+ * Ignores spaces, hyphens, lowercase, and padding '='.
+ */
+function base32Decode(base32) {
+  if (!base32 || typeof base32 !== 'string') return Buffer.alloc(0);
+  const clean = base32.toUpperCase().replace(/[\s=-]/g, '');
+  if (!clean.length) return Buffer.alloc(0);
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (let i = 0; i < clean.length; i++) {
+    const val = alphabet.indexOf(clean[i]);
+    if (val === -1) {
+      throw new Error(`Invalid Base32 character: ${clean[i]}`);
+    }
+    bits += val.toString(2).padStart(5, '0');
+  }
+  const bytes = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) {
+    bytes.push(parseInt(bits.substr(i, 8), 2));
+  }
+  return Buffer.from(bytes);
+}
+
+/**
+ * Generate RFC 6238 Time-based One-Time Password (TOTP).
+ * Computes 8-byte big-endian counter from epoch seconds, calculates HMAC-SHA1,
+ * and performs dynamic truncation per RFC 6238 / RFC 4226.
+ */
+function generateTOTP(secret, timestamp = Date.now(), stepSeconds = 30) {
+  if (!secret) return null;
+  const key = base32Decode(secret);
+  if (key.length === 0) return null;
+  const epoch = Math.floor(timestamp / 1000);
+  const counter = Math.floor(epoch / stepSeconds);
+
+  const counterBuf = Buffer.alloc(8);
+  counterBuf.writeBigUInt64BE(BigInt(counter));
+
+  const hmac = crypto.createHmac('sha1', key).update(counterBuf).digest();
+  const offset = hmac[hmac.length - 1] & 0x0f;
+  const codeInt = ((hmac[offset] & 0x7f) << 24) |
+                  ((hmac[offset + 1] & 0xff) << 16) |
+                  ((hmac[offset + 2] & 0xff) << 8) |
+                  (hmac[offset + 3] & 0xff);
+
+  const code = (codeInt % 1000000).toString().padStart(6, '0');
+  const remainingSeconds = stepSeconds - (epoch % stepSeconds);
+
+  return { code, remainingSeconds };
+}
+
 class CryptoVault {
   constructor(vaultFilePath) {
     this.vaultFilePath = vaultFilePath;
@@ -217,6 +269,14 @@ class CryptoVault {
     return { success: true };
   }
 
+  generateTOTP(secret, timestamp, stepSeconds) {
+    return generateTOTP(secret, timestamp, stepSeconds);
+  }
+
+  static generateTOTP(secret, timestamp, stepSeconds) {
+    return generateTOTP(secret, timestamp, stepSeconds);
+  }
+
   /**
    * Vault CRUD operations
    */
@@ -236,6 +296,7 @@ class CryptoVault {
       notes: item.notes || '',
       category: item.category || 'Logins',
       favorite: !!item.favorite,
+      totpSecret: (item.totpSecret || '').trim(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -249,9 +310,14 @@ class CryptoVault {
     const index = this.unlockedData.items.findIndex(i => i.id === id);
     if (index === -1) throw new Error('Item not found');
 
+    const sanitizedUpdate = { ...itemUpdate };
+    if (sanitizedUpdate.totpSecret !== undefined) {
+      sanitizedUpdate.totpSecret = (sanitizedUpdate.totpSecret || '').trim();
+    }
+
     this.unlockedData.items[index] = {
       ...this.unlockedData.items[index],
-      ...itemUpdate,
+      ...sanitizedUpdate,
       id, // protect ID
       updatedAt: new Date().toISOString()
     };
@@ -360,4 +426,4 @@ class CryptoVault {
   }
 }
 
-module.exports = { CryptoVault };
+module.exports = { CryptoVault, base32Decode, generateTOTP };
