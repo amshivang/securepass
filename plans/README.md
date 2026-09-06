@@ -9,7 +9,7 @@ Index of prioritized implementation plans produced by the `/improve` senior advi
 | [**001**](001-crypto-vault-automated-test-suite.md) | Establish Automated CryptoVault Test Suite Baseline | Tests | P1 | S | **DONE** | None |
 | [**002**](002-fix-backup-encryption-and-salt-bug.md) | Fix Backup Encryption and Salt Regeneration Bug | Security / Bug | P1 | S | **DONE** | Plan 001 |
 | [**003**](003-security-hardening-clipboard-and-csp.md) | Security Hardening: Clipboard Flush on Exit and CSP | Security | P2 | S | **DONE** | None |
-| [**004**](004-change-master-password.md) | Implement "Change Master Password" Workflow | Correctness | P2 | M | **TODO** | Plan 001, 002 |
+| [**004**](004-change-master-password.md) | Implement "Change Master Password" Workflow | Correctness | P2 | M | **DONE** | Plan 001, 002 |
 
 ---
 
