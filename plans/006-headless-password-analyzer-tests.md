@@ -147,5 +147,5 @@ In `renderer/index.html`, add `<script src="../analyzer-engine.js"></script>` or
 
 ## Done criteria
 
-- [ ] `npm test` runs both test suites and exits with code 0.
-- [ ] Shannon entropy and crack time math are verified by automated assertions.
+- [x] `npm test` runs both test suites and exits with code 0.
+- [x] Shannon entropy and crack time math are verified by automated assertions.

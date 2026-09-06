@@ -11,7 +11,7 @@ Index of prioritized implementation plans produced by the `/improve` senior advi
 | [**003**](003-security-hardening-clipboard-and-csp.md) | Security Hardening: Clipboard Flush on Exit and CSP | Security | P2 | S | **DONE** | None |
 | [**004**](004-change-master-password.md) | Implement "Change Master Password" Workflow | Correctness | P2 | M | **DONE** | Plan 001, 002 |
 | [**005**](005-configurable-vault-auto-lock.md) | Configurable Vault Inactivity Auto-Lock Duration | Security / Feature | P2 | S | **DONE** | None |
-| [**006**](006-headless-password-analyzer-tests.md) | Headless Password Analyzer & Shannon Entropy Tests | Tests | P2 | S | **TODO** | None |
+| [**006**](006-headless-password-analyzer-tests.md) | Headless Password Analyzer & Shannon Entropy Tests | Tests | P2 | S | **DONE** | None |
 | [**007**](007-totp-authenticator-2fa-engine.md) | Integrated Two-Factor Authentication (TOTP) Engine | Direction / Feature | P3 | M | **TODO** | None |
 
 ---
