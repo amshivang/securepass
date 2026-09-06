@@ -131,6 +131,45 @@ class CryptoVault {
   }
 
   /**
+   * Rotate master password, re-encrypting vault under a fresh salt and new key
+   */
+  changeMasterPassword(currentPassword, newPassword) {
+    this._ensureUnlocked();
+    if (!currentPassword) {
+      throw new Error('Current master password is required.');
+    }
+    if (!newPassword || newPassword.length < 8) {
+      throw new Error('New master password must be at least 8 characters.');
+    }
+    if (currentPassword === newPassword) {
+      throw new Error('New master password must be different from current master password.');
+    }
+
+    // 1. Verify current password matches active session
+    const verifyKey = this._deriveKey(currentPassword, this.salt);
+    try {
+      if (!crypto.timingSafeEqual(verifyKey, this.derivedKey)) {
+        throw new Error('Current master password is incorrect.');
+      }
+    } finally {
+      verifyKey.fill(0);
+    }
+
+    // 2. Generate brand new salt and derive new key
+    const newSalt = crypto.randomBytes(SALT_LENGTH);
+    const newKey = this._deriveKey(newPassword, newSalt);
+
+    // 3. Update active session credentials
+    if (this.derivedKey) this.derivedKey.fill(0);
+    this.derivedKey = newKey;
+    this.salt = newSalt;
+
+    // 4. Re-encrypt entire vault with new key and new salt
+    this.save();
+    return { success: true };
+  }
+
+  /**
    * Save current unlocked data securely to disk (atomic write)
    */
   save() {

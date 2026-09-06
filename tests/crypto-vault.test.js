@@ -292,6 +292,92 @@ try {
   assert.strictEqual(importedVault.isUnlocked, true);
   assert.strictEqual(importedVault.getItems()[0].password, 'SuperSecretAgentPassword!7');
 
+  // 10. Master Password Rotation (changeMasterPassword)
+  const preRotationSalt = saltVault.salt.toString('hex');
+  const newMasterPassword = 'BrandNewMasterPassword!2026';
+
+  // 1. Attempting changeMasterPassword with wrong current password throws
+  assert.throws(
+    () => saltVault.changeMasterPassword('IncorrectCurrentPassword', newMasterPassword),
+    /Current master password is incorrect./,
+    'changeMasterPassword with wrong current password must throw error'
+  );
+
+  // 2. Attempting changeMasterPassword with short (<8 chars) new password throws error
+  assert.throws(
+    () => saltVault.changeMasterPassword(password, 'short'),
+    /New master password must be at least 8 characters./,
+    'changeMasterPassword with short new password must throw error'
+  );
+
+  // 3. Attempting changeMasterPassword with same password throws error
+  assert.throws(
+    () => saltVault.changeMasterPassword(password, password),
+    /New master password must be different from current master password./,
+    'changeMasterPassword with same password must throw error'
+  );
+
+  // 4. Successful changeMasterPassword
+  const changeResult = saltVault.changeMasterPassword(password, newMasterPassword);
+  assert.deepStrictEqual(changeResult, { success: true }, 'changeMasterPassword should return { success: true }');
+
+  // Generates a new salt different from the initial salt
+  const postRotationSalt = saltVault.salt.toString('hex');
+  assert.notStrictEqual(postRotationSalt, preRotationSalt, 'Salt must be regenerated and different after password rotation');
+  assert.strictEqual(postRotationSalt.length, 32, 'New salt must be 16 bytes (32 hex characters)');
+
+  // Verify on-disk envelope was also updated with the new salt
+  const rotatedEnvelope = JSON.parse(fs.readFileSync(TEST_VAULT, 'utf8'));
+  assert.strictEqual(rotatedEnvelope.salt, postRotationSalt, 'On-disk envelope salt must match new rotated salt');
+
+  // Lock the vault
+  saltVault.lock();
+  assert.strictEqual(saltVault.isUnlocked, false);
+
+  // Unlocking with the old password throws authentication error
+  assert.throws(
+    () => saltVault.unlock(password),
+    /Invalid master password or vault has been corrupted./,
+    'Unlocking with old master password must fail after password rotation'
+  );
+  assert.strictEqual(saltVault.isUnlocked, false);
+
+  // Unlocking with the new password succeeds and returns all items intact
+  const unlockRotatedRes = saltVault.unlock(newMasterPassword);
+  assert.strictEqual(unlockRotatedRes.success, true);
+  assert.strictEqual(saltVault.isUnlocked, true);
+  const itemsAfterRotation = saltVault.getItems();
+  assert.strictEqual(itemsAfterRotation.length, 1);
+  assert.strictEqual(itemsAfterRotation[0].title, 'Secret Service');
+  assert.strictEqual(itemsAfterRotation[0].password, 'SuperSecretAgentPassword!7');
+
+  // Add another item with the new password, save, lock, unlock with new password to ensure persistence
+  const postRotationItem = saltVault.addItem({
+    title: 'Post Rotation Service',
+    username: 'bob',
+    password: 'PostRotationSecretPassword!9',
+    category: 'Logins'
+  });
+  assert.ok(postRotationItem.id);
+  saltVault.save();
+
+  saltVault.lock();
+  assert.strictEqual(saltVault.isUnlocked, false);
+
+  saltVault.unlock(newMasterPassword);
+  assert.strictEqual(saltVault.isUnlocked, true);
+  const finalItems = saltVault.getItems();
+  assert.strictEqual(finalItems.length, 2);
+  assert.strictEqual(finalItems[0].title, 'Post Rotation Service');
+  assert.strictEqual(finalItems[1].title, 'Secret Service');
+
+  // Verify locked vault throws on changeMasterPassword
+  saltVault.lock();
+  assert.throws(
+    () => saltVault.changeMasterPassword(newMasterPassword, 'AnotherNewPassword!2027'),
+    /Vault is locked. Unlock before performing operations./
+  );
+
   console.log('✓ All CryptoVault tests passed.');
 } finally {
   // 7. Cleanup: Ensure temporary test vault files are deleted before and after test execution in a finally block

@@ -271,6 +271,28 @@
           </div>
         </div>
 
+        <div class="settings-card">
+          <h3>Change Master Password</h3>
+          <p class="settings-desc">Update your master password. All vault data will be re-encrypted using a new cryptographic salt.</p>
+          <form id="changePasswordForm" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px; max-width: 420px;">
+            <div class="form-group">
+              <label for="currentMasterPassword">Current Master Password</label>
+              <input type="password" id="currentMasterPassword" class="input-text" placeholder="Enter current password" autocomplete="current-password" required />
+            </div>
+            <div class="form-group">
+              <label for="newMasterPassword">New Master Password</label>
+              <input type="password" id="newMasterPassword" class="input-text" placeholder="At least 8 characters" autocomplete="new-password" required />
+            </div>
+            <div class="form-group">
+              <label for="confirmNewMasterPassword">Confirm New Master Password</label>
+              <input type="password" id="confirmNewMasterPassword" class="input-text" placeholder="Re-enter new password" autocomplete="new-password" required />
+            </div>
+            <button type="submit" id="changeMasterPasswordBtn" class="btn-primary" style="align-self: flex-start;">
+              Change Master Password
+            </button>
+          </form>
+        </div>
+
       </div>
     </section>
 

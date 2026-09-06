@@ -94,6 +94,10 @@ const exportEncryptedBtn = document.getElementById('exportEncryptedBtn');
 const exportPlaintextBtn = document.getElementById('exportPlaintextBtn');
 const importBackupBtn = document.getElementById('importBackupBtn');
 const backupFileInput = document.getElementById('backupFileInput');
+const changePasswordForm = document.getElementById('changePasswordForm');
+const currentMasterPassword = document.getElementById('currentMasterPassword');
+const newMasterPassword = document.getElementById('newMasterPassword');
+const confirmNewMasterPassword = document.getElementById('confirmNewMasterPassword');
 
 // Toast
 const appToast = document.getElementById('appToast');
@@ -797,6 +801,40 @@ backupFileInput.addEventListener('change', async (e) => {
   };
   reader.readAsText(file);
 });
+
+// Change Master Password
+if (changePasswordForm) {
+  changePasswordForm.addEventListener('submit', async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const current = currentMasterPassword ? currentMasterPassword.value : '';
+    const next = newMasterPassword ? newMasterPassword.value : '';
+    const confirm = confirmNewMasterPassword ? confirmNewMasterPassword.value : '';
+
+    if (!current || !next || !confirm) {
+      showToast('All fields are required.');
+      return;
+    }
+
+    if (next !== confirm) {
+      showToast('New passwords do not match.');
+      return;
+    }
+
+    if (next.length < 8) {
+      showToast('New master password must be at least 8 characters.');
+      return;
+    }
+
+    const res = await window.securePassAPI.vaultChangeMasterPassword(current, next);
+    if (res && res.error) {
+      showToast(res.error);
+    } else {
+      changePasswordForm.reset();
+      showToast('Master password successfully updated!');
+    }
+  });
+}
 
 // Helper
 function escapeHtml(str) {

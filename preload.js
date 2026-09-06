@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('securePassAPI', {
   vaultInitialize: (masterPassword) => ipcRenderer.invoke('vault:initialize', masterPassword),
   vaultUnlock: (masterPassword) => ipcRenderer.invoke('vault:unlock', masterPassword),
   vaultLock: () => ipcRenderer.invoke('vault:lock'),
+  vaultChangeMasterPassword: (currentPassword, newPassword) => ipcRenderer.invoke('vault:change-master-password', currentPassword, newPassword),
   vaultGetItems: () => ipcRenderer.invoke('vault:get-items'),
   vaultAddItem: (item) => ipcRenderer.invoke('vault:add-item', item),
   vaultUpdateItem: (id, item) => ipcRenderer.invoke('vault:update-item', id, item),

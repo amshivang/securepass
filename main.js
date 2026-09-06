@@ -97,6 +97,16 @@ app.whenReady().then(() => {
     return vault.lock();
   });
 
+  // IPC: Change Master Password
+  ipcMain.handle('vault:change-master-password', async (_event, currentPassword, newPassword) => {
+    try {
+      if (!vault) throw new Error('Vault not initialized.');
+      return vault.changeMasterPassword(currentPassword, newPassword);
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
   // IPC: CRUD
   ipcMain.handle('vault:get-items', async () => {
     try {
