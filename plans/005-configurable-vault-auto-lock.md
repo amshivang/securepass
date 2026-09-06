@@ -122,7 +122,7 @@ function resetAutoLockTimer() {
 
 ## Done criteria
 
-- [ ] `npm test` exits 0.
-- [ ] Changing dropdown updates `localStorage` and resets timeout window.
-- [ ] Selecting "Never" disables the timeout.
-- [ ] Setting is remembered across application restarts.
+- [x] `npm test` exits 0.
+- [x] Changing dropdown updates `localStorage` and resets timeout window.
+- [x] Selecting "Never" disables the timeout.
+- [x] Setting is remembered across application restarts.
