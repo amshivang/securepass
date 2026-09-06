@@ -110,9 +110,33 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle('vault:export-encrypted-backup', async () => {
+    try {
+      return { backup: vault.exportEncryptedBackup() };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  ipcMain.handle('vault:export-plaintext-backup', async () => {
+    try {
+      return { backup: vault.exportPlaintextBackup() };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
   ipcMain.handle('vault:export-backup', async () => {
     try {
-      return { backup: vault.exportBackup() };
+      return { backup: vault.exportEncryptedBackup() };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  ipcMain.handle('vault:import-encrypted-backup', async (_event, backupEnvelopeString, masterPassword) => {
+    try {
+      return vault.importEncryptedBackup(backupEnvelopeString, masterPassword);
     } catch (err) {
       return { error: err.message };
     }

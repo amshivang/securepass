@@ -91,6 +91,7 @@ const breachSafeBanner = document.getElementById('breachSafeBanner');
 
 // Settings DOM
 const exportEncryptedBtn = document.getElementById('exportEncryptedBtn');
+const exportPlaintextBtn = document.getElementById('exportPlaintextBtn');
 const importBackupBtn = document.getElementById('importBackupBtn');
 const backupFileInput = document.getElementById('backupFileInput');
 
@@ -710,7 +711,11 @@ breachBtn.addEventListener('click', async () => {
 // 5. SETTINGS & BACKUP
 // -------------------------------------------------------------
 exportEncryptedBtn.addEventListener('click', async () => {
-  const res = await window.securePassAPI.vaultExportBackup();
+  const res = await window.securePassAPI.vaultExportEncryptedBackup();
+  if (res.error) {
+    showToast(`Export failed: ${res.error}`);
+    return;
+  }
   if (res.backup) {
     const blob = new Blob([res.backup], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -719,9 +724,34 @@ exportEncryptedBtn.addEventListener('click', async () => {
     a.download = `securepass-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Vault backup exported.');
+    showToast('Encrypted vault backup exported.');
   }
 });
+
+if (exportPlaintextBtn) {
+  exportPlaintextBtn.addEventListener('click', async () => {
+    const confirmed = confirm(
+      'WARNING: Plaintext backups contain all your passwords in unencrypted plain text! Anyone with access to this file will be able to read all credentials.\n\nAre you sure you want to export an unencrypted backup?'
+    );
+    if (!confirmed) return;
+
+    const res = await window.securePassAPI.vaultExportPlaintextBackup();
+    if (res.error) {
+      showToast(`Export failed: ${res.error}`);
+      return;
+    }
+    if (res.backup) {
+      const blob = new Blob([res.backup], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `securepass-plaintext-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Plaintext backup exported.');
+    }
+  });
+}
 
 importBackupBtn.addEventListener('click', () => {
   backupFileInput.click();
@@ -735,15 +765,34 @@ backupFileInput.addEventListener('change', async (e) => {
   reader.onload = async (event) => {
     try {
       const content = event.target.result;
-      const res = await window.securePassAPI.vaultImportBackup(content);
-      if (res.error) {
-        alert(`Failed to import backup: ${res.error}`);
+      const parsed = JSON.parse(content);
+
+      if (parsed.salt && parsed.iv && parsed.tag && parsed.data) {
+        const password = prompt('This backup is encrypted. Enter the master password used to encrypt it:');
+        if (!password) {
+          showToast('Import cancelled.');
+          return;
+        }
+        const res = await window.securePassAPI.vaultImportEncryptedBackup(content, password);
+        if (res.error) {
+          alert(`Failed to import encrypted backup: ${res.error}`);
+        } else {
+          await refreshVaultItems();
+          showToast(`Successfully imported ${res.count} items from encrypted backup!`);
+        }
       } else {
-        await refreshVaultItems();
-        showToast(`Successfully imported ${res.count} items!`);
+        const res = await window.securePassAPI.vaultImportBackup(content);
+        if (res.error) {
+          alert(`Failed to import backup: ${res.error}`);
+        } else {
+          await refreshVaultItems();
+          showToast(`Successfully imported ${res.count} items!`);
+        }
       }
     } catch (err) {
       alert('Invalid backup JSON file.');
+    } finally {
+      backupFileInput.value = '';
     }
   };
   reader.readAsText(file);

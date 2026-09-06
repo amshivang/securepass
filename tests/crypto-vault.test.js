@@ -4,10 +4,13 @@ const assert = require('assert');
 const { CryptoVault } = require('../crypto-vault');
 
 const TEST_VAULT = path.join(__dirname, 'test_vault.enc');
+const IMPORT_TEST_VAULT = path.join(__dirname, 'test_vault_imported.enc');
 
 function cleanup() {
   if (fs.existsSync(TEST_VAULT)) fs.unlinkSync(TEST_VAULT);
   if (fs.existsSync(`${TEST_VAULT}.tmp`)) fs.unlinkSync(`${TEST_VAULT}.tmp`);
+  if (fs.existsSync(IMPORT_TEST_VAULT)) fs.unlinkSync(IMPORT_TEST_VAULT);
+  if (fs.existsSync(`${IMPORT_TEST_VAULT}.tmp`)) fs.unlinkSync(`${IMPORT_TEST_VAULT}.tmp`);
 }
 
 cleanup();
@@ -177,6 +180,117 @@ try {
     /Corrupted vault file format\./,
     'Corrupted JSON must throw corrupted vault file format error'
   );
+
+  // 7. Salt preservation: Routine save() preserves the original salt
+  cleanup();
+  const saltVault = new CryptoVault(TEST_VAULT);
+  saltVault.initialize(password);
+  const initialSaltHex = saltVault.salt.toString('hex');
+  assert.strictEqual(initialSaltHex.length, 32, 'Initial salt should be 16 bytes (32 hex characters)');
+
+  // Save via addItem preserves salt
+  const testItem = saltVault.addItem({
+    title: 'Secret Service',
+    username: 'agent007',
+    password: 'SuperSecretAgentPassword!7',
+    category: 'Logins'
+  });
+  assert.strictEqual(saltVault.salt.toString('hex'), initialSaltHex, 'In-memory salt must remain identical after addItem');
+
+  let fileEnvelope = JSON.parse(fs.readFileSync(TEST_VAULT, 'utf8'));
+  assert.strictEqual(fileEnvelope.salt, initialSaltHex, 'On-disk envelope salt must match initial salt after addItem');
+
+  // Save via updateItem preserves salt
+  saltVault.updateItem(testItem.id, { notes: 'Updated notes' });
+  assert.strictEqual(saltVault.salt.toString('hex'), initialSaltHex, 'In-memory salt must remain identical after updateItem');
+
+  fileEnvelope = JSON.parse(fs.readFileSync(TEST_VAULT, 'utf8'));
+  assert.strictEqual(fileEnvelope.salt, initialSaltHex, 'On-disk envelope salt must match initial salt after updateItem');
+
+  // Routine save() directly preserves salt
+  saltVault.save();
+  fileEnvelope = JSON.parse(fs.readFileSync(TEST_VAULT, 'utf8'));
+  assert.strictEqual(fileEnvelope.salt, initialSaltHex, 'On-disk envelope salt must match initial salt after save()');
+
+  // Verify save() throws if active salt is missing
+  const savedSalt = saltVault.salt;
+  saltVault.salt = null;
+  assert.throws(
+    () => saltVault.save(),
+    /Active salt missing from unlocked vault session\./,
+    'save() must throw if salt is missing from unlocked session'
+  );
+  saltVault.salt = savedSalt;
+
+  // 8. Encrypted Backup Export (exportEncryptedBackup)
+  const encryptedBackup = saltVault.exportEncryptedBackup();
+  assert.strictEqual(typeof encryptedBackup, 'string', 'exportEncryptedBackup must return string');
+
+  const parsedBackup = JSON.parse(encryptedBackup);
+  assert.ok(parsedBackup.salt, 'Encrypted backup envelope must contain salt');
+  assert.ok(parsedBackup.iv, 'Encrypted backup envelope must contain iv');
+  assert.ok(parsedBackup.tag, 'Encrypted backup envelope must contain tag');
+  assert.ok(parsedBackup.data, 'Encrypted backup envelope must contain data');
+  assert.strictEqual(parsedBackup.salt, initialSaltHex, 'Encrypted backup salt must match vault salt');
+
+  // Verify envelope data is NOT readable in plain text
+  assert.strictEqual(encryptedBackup.includes('SuperSecretAgentPassword!7'), false, 'Encrypted backup must NOT contain plaintext password');
+  assert.strictEqual(encryptedBackup.includes('Secret Service'), false, 'Encrypted backup must NOT contain plaintext title');
+  assert.strictEqual(encryptedBackup.includes('agent007'), false, 'Encrypted backup must NOT contain plaintext username');
+
+  // exportBackup() alias also returns encrypted envelope
+  assert.strictEqual(saltVault.exportBackup(), encryptedBackup, 'exportBackup() should return encrypted envelope');
+
+  // exportPlaintextBackup() returns plaintext JSON containing items
+  const plaintextBackup = saltVault.exportPlaintextBackup();
+  assert.strictEqual(typeof plaintextBackup, 'string');
+  assert.ok(plaintextBackup.includes('SuperSecretAgentPassword!7'), 'Plaintext backup must contain plaintext password');
+  assert.ok(plaintextBackup.includes('Secret Service'), 'Plaintext backup must contain title');
+
+  // 9. Encrypted Backup Import (importEncryptedBackup)
+  const importedVault = new CryptoVault(IMPORT_TEST_VAULT);
+  assert.strictEqual(importedVault.exists(), false);
+
+  // Attempt import with wrong password fails cleanly
+  assert.throws(
+    () => importedVault.importEncryptedBackup(encryptedBackup, wrongPassword),
+    /Invalid master password for encrypted backup or backup file is corrupted\./,
+    'importEncryptedBackup with wrong password must throw error'
+  );
+  assert.strictEqual(importedVault.isUnlocked, false, 'Imported vault must remain locked after failed import');
+  assert.strictEqual(importedVault.exists(), false, 'Imported vault file must not exist if import failed');
+
+  // Attempt import with invalid JSON or envelope format
+  assert.throws(
+    () => importedVault.importEncryptedBackup('not-valid-json', password),
+    /Invalid encrypted backup format: invalid JSON\./,
+    'importEncryptedBackup with malformed JSON must throw error'
+  );
+  assert.throws(
+    () => importedVault.importEncryptedBackup(JSON.stringify({ salt: '123' }), password),
+    /missing required crypto fields/,
+    'importEncryptedBackup with missing crypto fields must throw error'
+  );
+
+  // Successful import with correct password
+  const importRes = importedVault.importEncryptedBackup(encryptedBackup, password);
+  assert.strictEqual(importRes.success, true);
+  assert.strictEqual(importedVault.isUnlocked, true);
+  assert.strictEqual(importedVault.exists(), true);
+  assert.strictEqual(importRes.count, 1);
+
+  const importedItems = importedVault.getItems();
+  assert.strictEqual(importedItems.length, 1);
+  assert.strictEqual(importedItems[0].title, 'Secret Service');
+  assert.strictEqual(importedItems[0].password, 'SuperSecretAgentPassword!7');
+  assert.strictEqual(importedVault.salt.toString('hex'), initialSaltHex);
+
+  // Lock and re-unlock imported vault to verify on-disk persistence
+  importedVault.lock();
+  assert.strictEqual(importedVault.isUnlocked, false);
+  importedVault.unlock(password);
+  assert.strictEqual(importedVault.isUnlocked, true);
+  assert.strictEqual(importedVault.getItems()[0].password, 'SuperSecretAgentPassword!7');
 
   console.log('✓ All CryptoVault tests passed.');
 } finally {

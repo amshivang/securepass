@@ -26,6 +26,7 @@ class CryptoVault {
     this.derivedKey = null;
     this.unlockedData = null;
     this.isUnlocked = false;
+    this.salt = null;
   }
 
   /**
@@ -57,6 +58,7 @@ class CryptoVault {
     }
 
     const salt = crypto.randomBytes(SALT_LENGTH);
+    this.salt = salt;
     this.derivedKey = this._deriveKey(masterPassword, salt);
     this.unlockedData = {
       version: 1,
@@ -66,7 +68,7 @@ class CryptoVault {
     };
     this.isUnlocked = true;
 
-    this.save(salt);
+    this.save();
     return { success: true };
   }
 
@@ -101,6 +103,7 @@ class CryptoVault {
         decipher.final()
       ]);
 
+      this.salt = salt;
       this.derivedKey = key;
       this.unlockedData = JSON.parse(decrypted.toString('utf8'));
       this.isUnlocked = true;
@@ -121,6 +124,7 @@ class CryptoVault {
       this.derivedKey.fill(0);
       this.derivedKey = null;
     }
+    this.salt = null;
     this.unlockedData = null;
     this.isUnlocked = false;
     return { success: true };
@@ -129,31 +133,20 @@ class CryptoVault {
   /**
    * Save current unlocked data securely to disk (atomic write)
    */
-  save(optionalSalt = null) {
+  save() {
     if (!this.isUnlocked || !this.derivedKey) {
       throw new Error('Cannot save locked vault.');
     }
+
+    if (!this.salt) {
+      throw new Error('Active salt missing from unlocked vault session.');
+    }
+    const salt = this.salt;
 
     // Ensure directory exists
     const dir = path.dirname(this.vaultFilePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
-    }
-
-    let salt = optionalSalt;
-    if (!salt) {
-      // Re-read existing salt if available, otherwise generate new
-      if (fs.existsSync(this.vaultFilePath)) {
-        try {
-          const raw = fs.readFileSync(this.vaultFilePath, 'utf8');
-          const prev = JSON.parse(raw);
-          salt = Buffer.from(prev.salt, 'hex');
-        } catch (e) {
-          salt = crypto.randomBytes(SALT_LENGTH);
-        }
-      } else {
-        salt = crypto.randomBytes(SALT_LENGTH);
-      }
     }
 
     const iv = crypto.randomBytes(IV_LENGTH);
@@ -236,9 +229,78 @@ class CryptoVault {
     return { success: true };
   }
 
-  exportBackup() {
+  exportEncryptedBackup() {
+    this._ensureUnlocked();
+    return fs.readFileSync(this.vaultFilePath, 'utf8');
+  }
+
+  exportPlaintextBackup() {
     this._ensureUnlocked();
     return JSON.stringify(this.unlockedData, null, 2);
+  }
+
+  exportBackup() {
+    return this.exportEncryptedBackup();
+  }
+
+  importEncryptedBackup(backupEnvelopeString, masterPassword) {
+    let envelope;
+    try {
+      envelope = typeof backupEnvelopeString === 'string' ? JSON.parse(backupEnvelopeString) : backupEnvelopeString;
+    } catch (e) {
+      throw new Error('Invalid encrypted backup format: invalid JSON.');
+    }
+
+    if (!envelope || typeof envelope !== 'object' || !envelope.salt || !envelope.iv || !envelope.tag || !envelope.data) {
+      throw new Error('Invalid encrypted backup envelope: missing required crypto fields (salt, iv, tag, data).');
+    }
+
+    const salt = Buffer.from(envelope.salt, 'hex');
+    const iv = Buffer.from(envelope.iv, 'hex');
+    const tag = Buffer.from(envelope.tag, 'hex');
+    const ciphertext = Buffer.from(envelope.data, 'hex');
+
+    if (salt.length !== SALT_LENGTH || iv.length !== IV_LENGTH || tag.length !== 16) {
+      throw new Error('Invalid encrypted backup envelope: malformed cryptographic parameters.');
+    }
+
+    const key = this._deriveKey(masterPassword, salt);
+    let decryptedData;
+    try {
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+      decipher.setAuthTag(tag);
+      const decrypted = Buffer.concat([
+        decipher.update(ciphertext),
+        decipher.final()
+      ]);
+      decryptedData = JSON.parse(decrypted.toString('utf8'));
+    } catch (err) {
+      throw new Error('Invalid master password for encrypted backup or backup file is corrupted.');
+    }
+
+    if (!decryptedData || !Array.isArray(decryptedData.items)) {
+      throw new Error('Invalid backup payload: missing items array.');
+    }
+
+    // Atomic write to prevent partial writes
+    const dir = path.dirname(this.vaultFilePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const tmpFile = `${this.vaultFilePath}.tmp`;
+    fs.writeFileSync(tmpFile, JSON.stringify(envelope, null, 2), 'utf8');
+    fs.renameSync(tmpFile, this.vaultFilePath);
+
+    // Set active session data
+    if (this.derivedKey) {
+      this.derivedKey.fill(0);
+    }
+    this.salt = salt;
+    this.derivedKey = key;
+    this.unlockedData = decryptedData;
+    this.isUnlocked = true;
+
+    return { success: true, count: decryptedData.items.length };
   }
 
   importBackup(jsonString) {
