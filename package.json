@@ -7,9 +7,9 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "test:crypto": "node test-crypto.js",
+    "test": "node tests/crypto-vault.test.js",
     "pack:win": "electron-builder --win --dir",
-    "dist:win": "electron-builder --win portable nsis"
+    "dist:win": "electron-builder --win"
   },
   "devDependencies": {
     "electron": "^34.3.0",
