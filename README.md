@@ -1,25 +1,25 @@
 # 🛡️ SecurePass — Zero-Knowledge Windows Password Manager & Security Analyzer
 
-[![Release](https://img.shields.io/badge/release-v1.1.0-blue.svg)](https://github.com/amshivang/securepass/releases/tag/v1.1.0)
+[![Release](https://img.shields.io/badge/release-v1.2.0-blue.svg)](https://github.com/amshivang/securepass/releases/tag/v1.2.0)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6.svg?logo=windows)](https://github.com/amshivang/securepass/releases)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#-testing)
 [![Security](https://img.shields.io/badge/encryption-AES--256--GCM-green.svg)](#-zero-knowledge-security-architecture)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-**SecurePass** is a privacy-first, zero-knowledge desktop password manager and real-time security analyzer designed specifically for Windows. Built with an ultra-clean, minimalist pure-black aesthetic, SecurePass combines **Bitwarden-grade client-side encryption** with an advanced **entropy and pattern security analyzer**.
+**SecurePass** is a privacy-first, zero-knowledge desktop password manager, authenticator, and real-time security analyzer designed specifically for Windows. Built with an ultra-clean, minimalist pure-black aesthetic, SecurePass combines **Bitwarden-grade client-side encryption**, an integrated **RFC 6238 TOTP 2FA engine**, and an advanced **Shannon entropy and pattern security analyzer**.
 
-Your master password never leaves your device. All your logins, payment cards, and secret notes are encrypted and stored locally in system memory and locked behind authenticated AES-256-GCM encryption.
+Your master password never leaves your device. All your logins, 2FA authenticator seeds, payment cards, and secret notes are encrypted and stored locally in system memory and locked behind authenticated AES-256-GCM encryption.
 
 ---
 
-## 📥 Downloads (Release v1.1.0)
+## 📥 Downloads (Release v1.2.0)
 
-SecurePass is available in two distribution formats on our [**Releases Page**](https://github.com/amshivang/securepass/releases/tag/v1.1.0):
+SecurePass is available in two distribution formats on our [**Releases Page**](https://github.com/amshivang/securepass/releases/tag/v1.2.0):
 
 | Download Type | File Name | Description |
 | :--- | :--- | :--- |
-| **🚀 Windows Installer (Recommended)** | `SecurePass-Setup-v1.1.0.exe` | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
-| **💼 Portable Executable** | `SecurePass-v1.1.0-Portable.exe` | Standalone executable. Runs instantly with zero installation, perfect for running off USB drives. |
+| **🚀 Windows Installer (Recommended)** | `SecurePass-Setup-v1.2.0.exe` | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
+| **💼 Portable Executable** | `SecurePass-v1.2.0-Portable.exe` | Standalone executable. Runs instantly with zero installation, perfect for running off USB drives. |
 
 ---
 
