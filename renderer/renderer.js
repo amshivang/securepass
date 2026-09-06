@@ -1,0 +1,763 @@
+/**
+ * SecurePass Desktop - Renderer Controller
+ * 
+ * Manages Vault UI, Zero-Knowledge operations, and Real-time Password Analyzer.
+ * ponytail: Clean event delegation, zero external runtime UI frameworks, minimal footprint.
+ */
+
+// Application State
+const state = {
+  isSetupMode: false,
+  items: [],
+  activeCategory: 'All',
+  searchQuery: '',
+  autoLockMinutes: 15,
+  inactivityTimer: null
+};
+
+// DOM References
+const authView = document.getElementById('authView');
+const vaultView = document.getElementById('vaultView');
+const analyzerView = document.getElementById('analyzerView');
+const settingsView = document.getElementById('settingsView');
+const navTabs = document.getElementById('navTabs');
+const lockVaultBtn = document.getElementById('lockVaultBtn');
+
+// Auth DOM
+const authTitle = document.getElementById('authTitle');
+const authSubtitle = document.getElementById('authSubtitle');
+const authForm = document.getElementById('authForm');
+const masterPasswordInput = document.getElementById('masterPasswordInput');
+const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const authErrorBanner = document.getElementById('authErrorBanner');
+const authErrorText = document.getElementById('authErrorText');
+const toggleAuthEye = document.getElementById('toggleAuthEye');
+const authEyeOpen = document.getElementById('authEyeOpen');
+const authEyeClosed = document.getElementById('authEyeClosed');
+
+// Vault DOM
+const itemsList = document.getElementById('itemsList');
+const emptyVaultState = document.getElementById('emptyVaultState');
+const vaultSearchInput = document.getElementById('vaultSearchInput');
+const categoryFilter = document.getElementById('categoryFilter');
+const addItemBtn = document.getElementById('addItemBtn');
+const emptyAddBtn = document.getElementById('emptyAddBtn');
+
+// Modal DOM
+const itemModal = document.getElementById('itemModal');
+const modalTitle = document.getElementById('modalTitle');
+const itemForm = document.getElementById('itemForm');
+const itemId = document.getElementById('itemId');
+const itemCategory = document.getElementById('itemCategory');
+const itemTitle = document.getElementById('itemTitle');
+const itemUsername = document.getElementById('itemUsername');
+const itemPassword = document.getElementById('itemPassword');
+const itemUrl = document.getElementById('itemUrl');
+const itemNotes = document.getElementById('itemNotes');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const cancelModalBtn = document.getElementById('cancelModalBtn');
+const modalGenPasswordBtn = document.getElementById('modalGenPasswordBtn');
+const modalStrengthMeter = document.getElementById('modalStrengthMeter');
+const toggleModalPasswordEye = document.getElementById('toggleModalPasswordEye');
+const modalEyeOpen = document.getElementById('modalEyeOpen');
+const modalEyeClosed = document.getElementById('modalEyeClosed');
+
+// Analyzer DOM
+const analyzerPasswordInput = document.getElementById('analyzerPasswordInput');
+const toggleAnalyzerEye = document.getElementById('toggleAnalyzerEye');
+const analyzerEyeOpen = document.getElementById('analyzerEyeOpen');
+const analyzerEyeClosed = document.getElementById('analyzerEyeClosed');
+const analyzerGenBtn = document.getElementById('analyzerGenBtn');
+const analyzerCopyBtn = document.getElementById('analyzerCopyBtn');
+const analyzerCopyIcon = document.getElementById('analyzerCopyIcon');
+const analyzerCheckIcon = document.getElementById('analyzerCheckIcon');
+const strengthSection = document.getElementById('strengthSection');
+const strengthTag = document.getElementById('strengthTag');
+const confidenceBadge = document.getElementById('confidenceBadge');
+const strengthPct = document.getElementById('strengthPct');
+const strengthFill = document.getElementById('strengthFill');
+const statCrack = document.getElementById('statCrack');
+const statScore = document.getElementById('statScore');
+const commonBanner = document.getElementById('commonBanner');
+const adviceBanner = document.getElementById('adviceBanner');
+const adviceList = document.getElementById('adviceList');
+const allGoodBanner = document.getElementById('allGoodBanner');
+const breachBtn = document.getElementById('breachBtn');
+const breachDangerBanner = document.getElementById('breachDangerBanner');
+const breachDangerText = document.getElementById('breachDangerText');
+const breachSafeBanner = document.getElementById('breachSafeBanner');
+
+// Settings DOM
+const exportEncryptedBtn = document.getElementById('exportEncryptedBtn');
+const importBackupBtn = document.getElementById('importBackupBtn');
+const backupFileInput = document.getElementById('backupFileInput');
+
+// Toast
+const appToast = document.getElementById('appToast');
+let toastTimeout = null;
+
+function showToast(message) {
+  if (toastTimeout) clearTimeout(toastTimeout);
+  appToast.textContent = message;
+  appToast.style.display = 'block';
+  toastTimeout = setTimeout(() => {
+    appToast.style.display = 'none';
+  }, 2500);
+}
+
+// -------------------------------------------------------------
+// 1. INITIALIZATION & AUTH
+// -------------------------------------------------------------
+async function initApp() {
+  resetInactivityTimer();
+  ['click', 'keydown', 'mousemove'].forEach(evt => {
+    window.addEventListener(evt, resetInactivityTimer, { passive: true });
+  });
+
+  const exists = await window.securePassAPI.vaultCheckExists();
+  if (!exists) {
+    state.isSetupMode = true;
+    authTitle.textContent = 'Create Master Password';
+    authSubtitle.textContent = 'Set a master password to encrypt your vault. Write this down — zero-knowledge means it cannot be recovered if lost!';
+    confirmPasswordGroup.style.display = 'block';
+    authSubmitBtn.querySelector('span').textContent = 'Create Master Vault';
+  } else {
+    state.isSetupMode = false;
+    authTitle.textContent = 'Unlock Your Vault';
+    authSubtitle.textContent = 'Zero-knowledge AES-256-GCM encryption. Enter your master password to unlock.';
+    confirmPasswordGroup.style.display = 'none';
+    authSubmitBtn.querySelector('span').textContent = 'Unlock Vault';
+  }
+}
+
+authForm.addEventListener('submit', async () => {
+  const masterPassword = masterPasswordInput.value.trim();
+  if (!masterPassword) return;
+
+  hideAuthError();
+
+  if (state.isSetupMode) {
+    const confirm = confirmPasswordInput.value.trim();
+    if (masterPassword.length < 8) {
+      showAuthError('Master password must be at least 8 characters.');
+      return;
+    }
+    if (masterPassword !== confirm) {
+      showAuthError('Passwords do not match. Please re-type.');
+      return;
+    }
+
+    const res = await window.securePassAPI.vaultInitialize(masterPassword);
+    if (res.error) {
+      showAuthError(res.error);
+      return;
+    }
+    onVaultUnlocked();
+  } else {
+    authSubmitBtn.disabled = true;
+    authSubmitBtn.querySelector('span').textContent = 'Decrypting…';
+
+    const res = await window.securePassAPI.vaultUnlock(masterPassword);
+    authSubmitBtn.disabled = false;
+    authSubmitBtn.querySelector('span').textContent = 'Unlock Vault';
+
+    if (res.error) {
+      showAuthError(res.error);
+      return;
+    }
+    onVaultUnlocked();
+  }
+});
+
+function showAuthError(msg) {
+  authErrorText.textContent = msg;
+  authErrorBanner.style.display = 'block';
+}
+
+function hideAuthError() {
+  authErrorBanner.style.display = 'none';
+}
+
+toggleAuthEye.addEventListener('click', () => {
+  const isPass = masterPasswordInput.type === 'password';
+  masterPasswordInput.type = isPass ? 'text' : 'password';
+  authEyeOpen.style.display = isPass ? 'none' : 'block';
+  authEyeClosed.style.display = isPass ? 'block' : 'none';
+});
+
+async function onVaultUnlocked() {
+  masterPasswordInput.value = '';
+  confirmPasswordInput.value = '';
+  authView.style.display = 'none';
+  navTabs.style.display = 'flex';
+  lockVaultBtn.style.display = 'flex';
+
+  switchView('vaultView');
+  await refreshVaultItems();
+  showToast('Vault unlocked securely.');
+}
+
+async function lockVault() {
+  await window.securePassAPI.vaultLock();
+  state.items = [];
+  itemsList.innerHTML = '';
+  navTabs.style.display = 'none';
+  lockVaultBtn.style.display = 'none';
+  vaultView.style.display = 'none';
+  analyzerView.style.display = 'none';
+  settingsView.style.display = 'none';
+  authView.style.display = 'flex';
+  state.isSetupMode = false;
+  authTitle.textContent = 'Unlock Your Vault';
+  confirmPasswordGroup.style.display = 'none';
+  authSubmitBtn.querySelector('span').textContent = 'Unlock Vault';
+  showToast('Vault locked.');
+}
+
+lockVaultBtn.addEventListener('click', lockVault);
+
+function resetInactivityTimer() {
+  if (state.inactivityTimer) clearTimeout(state.inactivityTimer);
+  state.inactivityTimer = setTimeout(() => {
+    if (navTabs.style.display !== 'none') {
+      lockVault();
+    }
+  }, state.autoLockMinutes * 60 * 1000);
+}
+
+// -------------------------------------------------------------
+// 2. NAVIGATION
+// -------------------------------------------------------------
+function switchView(targetId) {
+  [vaultView, analyzerView, settingsView].forEach(v => v.style.display = 'none');
+  document.getElementById(targetId).style.display = 'flex';
+
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.target === targetId);
+  });
+}
+
+navTabs.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    switchView(tab.dataset.target);
+  });
+});
+
+// -------------------------------------------------------------
+// 3. VAULT MANAGEMENT
+// -------------------------------------------------------------
+async function refreshVaultItems() {
+  const res = await window.securePassAPI.vaultGetItems();
+  if (res.items) {
+    state.items = res.items;
+    renderVaultItems();
+  }
+}
+
+function renderVaultItems() {
+  const query = state.searchQuery.toLowerCase();
+  const filtered = state.items.filter(item => {
+    const matchesCategory = state.activeCategory === 'All' || item.category === state.activeCategory;
+    const matchesSearch = !query || 
+      (item.title && item.title.toLowerCase().includes(query)) ||
+      (item.username && item.username.toLowerCase().includes(query)) ||
+      (item.notes && item.notes.toLowerCase().includes(query));
+    return matchesCategory && matchesSearch;
+  });
+
+  itemsList.innerHTML = '';
+
+  if (filtered.length === 0) {
+    emptyVaultState.style.display = 'flex';
+    itemsList.style.display = 'none';
+    return;
+  }
+
+  emptyVaultState.style.display = 'none';
+  itemsList.style.display = 'grid';
+
+  filtered.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'vault-card';
+
+    const categoryIcons = {
+      'Logins': `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+      'Cards': `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
+      'Secure Notes': `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`
+    };
+
+    const iconSvg = categoryIcons[item.category] || categoryIcons['Logins'];
+
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-info">
+          <div class="card-icon">${iconSvg}</div>
+          <div>
+            <div class="card-title">${escapeHtml(item.title)}</div>
+            <div class="card-category">${escapeHtml(item.category)}</div>
+          </div>
+        </div>
+        <button class="card-menu-btn delete-item-btn" data-id="${item.id}" title="Delete Item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+
+      <div class="card-details">
+        ${item.username ? `
+          <div class="detail-row">
+            <span class="detail-label">Username</span>
+            <span class="detail-value">${escapeHtml(item.username)}</span>
+          </div>
+        ` : ''}
+        ${item.password ? `
+          <div class="detail-row">
+            <span class="detail-label">Password</span>
+            <span class="detail-value">••••••••••••</span>
+          </div>
+        ` : ''}
+        ${item.url ? `
+          <div class="detail-row">
+            <span class="detail-label">Website</span>
+            <span class="detail-value">${escapeHtml(item.url.replace(/^https?:\/\//, ''))}</span>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="card-actions">
+        <div class="copy-buttons">
+          ${item.username ? `
+            <button class="btn-card-action copy-username-btn" data-username="${escapeHtml(item.username)}">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>User</span>
+            </button>
+          ` : ''}
+          ${item.password ? `
+            <button class="btn-card-action copy-pass-btn" data-id="${item.id}">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Password</span>
+            </button>
+          ` : ''}
+        </div>
+        <button class="btn-card-action edit-item-btn" data-id="${item.id}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span>Edit</span>
+        </button>
+      </div>
+    `;
+
+    itemsList.appendChild(card);
+  });
+}
+
+// Vault Event Listeners
+vaultSearchInput.addEventListener('input', (e) => {
+  state.searchQuery = e.target.value;
+  renderVaultItems();
+});
+
+categoryFilter.querySelectorAll('.pill-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    categoryFilter.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.activeCategory = btn.dataset.cat;
+    renderVaultItems();
+  });
+});
+
+// Item delegation (Copy, Edit, Delete)
+itemsList.addEventListener('click', async (e) => {
+  const copyUserBtn = e.target.closest('.copy-username-btn');
+  if (copyUserBtn) {
+    const user = copyUserBtn.dataset.username;
+    await window.securePassAPI.copyToClipboard(user, false);
+    showToast('Username copied!');
+    return;
+  }
+
+  const copyPassBtn = e.target.closest('.copy-pass-btn');
+  if (copyPassBtn) {
+    const id = copyPassBtn.dataset.id;
+    const item = state.items.find(i => i.id === id);
+    if (item && item.password) {
+      await window.securePassAPI.copyToClipboard(item.password, true);
+      showToast('Password copied! (Auto-clears in 30s)');
+    }
+    return;
+  }
+
+  const editBtn = e.target.closest('.edit-item-btn');
+  if (editBtn) {
+    const id = editBtn.dataset.id;
+    const item = state.items.find(i => i.id === id);
+    if (item) openItemModal(item);
+    return;
+  }
+
+  const deleteBtn = e.target.closest('.delete-item-btn');
+  if (deleteBtn) {
+    const id = deleteBtn.dataset.id;
+    if (confirm('Are you sure you want to permanently delete this item?')) {
+      await window.securePassAPI.vaultDeleteItem(id);
+      await refreshVaultItems();
+      showToast('Item deleted.');
+    }
+    return;
+  }
+});
+
+// Modal Operations
+function openItemModal(item = null) {
+  if (item) {
+    modalTitle.textContent = 'Edit Item';
+    itemId.value = item.id;
+    itemCategory.value = item.category || 'Logins';
+    itemTitle.value = item.title || '';
+    itemUsername.value = item.username || '';
+    itemPassword.value = item.password || '';
+    itemUrl.value = item.url || '';
+    itemNotes.value = item.notes || '';
+    updateModalStrength(item.password);
+  } else {
+    modalTitle.textContent = 'Add New Credential';
+    itemForm.reset();
+    itemId.value = '';
+    modalStrengthMeter.textContent = 'Strength: —';
+    modalStrengthMeter.style.color = 'var(--text-dim)';
+  }
+  itemModal.style.display = 'flex';
+  itemTitle.focus();
+}
+
+function closeItemModal() {
+  itemModal.style.display = 'none';
+}
+
+addItemBtn.addEventListener('click', () => openItemModal());
+emptyAddBtn.addEventListener('click', () => openItemModal());
+closeModalBtn.addEventListener('click', closeItemModal);
+cancelModalBtn.addEventListener('click', closeItemModal);
+
+itemForm.addEventListener('submit', async () => {
+  const id = itemId.value;
+  const payload = {
+    title: itemTitle.value.trim() || 'Untitled',
+    category: itemCategory.value,
+    username: itemUsername.value.trim(),
+    password: itemPassword.value,
+    url: itemUrl.value.trim(),
+    notes: itemNotes.value.trim()
+  };
+
+  if (id) {
+    await window.securePassAPI.vaultUpdateItem(id, payload);
+    showToast('Item updated in vault.');
+  } else {
+    await window.securePassAPI.vaultAddItem(payload);
+    showToast('New item encrypted & saved.');
+  }
+
+  closeItemModal();
+  await refreshVaultItems();
+});
+
+// Modal Password Generation & Reveal
+modalGenPasswordBtn.addEventListener('click', () => {
+  const generated = generateStrongPassword(20);
+  itemPassword.value = generated;
+  itemPassword.type = 'text';
+  modalEyeOpen.style.display = 'none';
+  modalEyeClosed.style.display = 'block';
+  updateModalStrength(generated);
+});
+
+toggleModalPasswordEye.addEventListener('click', () => {
+  const isPass = itemPassword.type === 'password';
+  itemPassword.type = isPass ? 'text' : 'password';
+  modalEyeOpen.style.display = isPass ? 'none' : 'block';
+  modalEyeClosed.style.display = isPass ? 'block' : 'none';
+});
+
+itemPassword.addEventListener('input', (e) => {
+  updateModalStrength(e.target.value);
+});
+
+function updateModalStrength(pwd) {
+  if (!pwd) {
+    modalStrengthMeter.textContent = 'Strength: —';
+    modalStrengthMeter.style.color = 'var(--text-dim)';
+    return;
+  }
+  const score = evaluatePasswordScore(pwd);
+  if (score >= 11) {
+    modalStrengthMeter.textContent = 'Strength: Strong';
+    modalStrengthMeter.style.color = 'var(--strong)';
+  } else if (score >= 6) {
+    modalStrengthMeter.textContent = 'Strength: Medium';
+    modalStrengthMeter.style.color = 'var(--medium)';
+  } else {
+    modalStrengthMeter.textContent = 'Strength: Weak';
+    modalStrengthMeter.style.color = 'var(--weak)';
+  }
+}
+
+// -------------------------------------------------------------
+// 4. SECUREPASS PASSWORD ANALYZER & GENERATOR ENGINE
+// -------------------------------------------------------------
+function generateStrongPassword(length = 18) {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const array = new Uint32Array(length);
+  window.crypto.getRandomValues(array);
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += charset[array[i] % charset.length];
+  }
+  return result;
+}
+
+function calculateShannonEntropy(str) {
+  if (!str) return 0;
+  const len = str.length;
+  const freq = {};
+  for (const ch of str) freq[ch] = (freq[ch] || 0) + 1;
+  let entropy = 0;
+  for (const ch in freq) {
+    const p = freq[ch] / len;
+    entropy -= p * Math.log2(p);
+  }
+  return entropy;
+}
+
+function evaluatePasswordScore(pwd) {
+  if (!pwd) return 0;
+  let score = 0;
+  if (pwd.length >= 8) score += 2;
+  if (pwd.length >= 12) score += 3;
+  if (pwd.length >= 16) score += 2;
+  if (/[a-z]/.test(pwd)) score += 1;
+  if (/[A-Z]/.test(pwd)) score += 2;
+  if (/[0-9]/.test(pwd)) score += 2;
+  if (/[^a-zA-Z0-9]/.test(pwd)) score += 3;
+  return Math.min(15, score);
+}
+
+function estimateCrackTime(pwd) {
+  if (!pwd) return 'Instant';
+  const len = pwd.length;
+  let pool = 0;
+  if (/[a-z]/.test(pwd)) pool += 26;
+  if (/[A-Z]/.test(pwd)) pool += 26;
+  if (/[0-9]/.test(pwd)) pool += 10;
+  if (/[^a-zA-Z0-9]/.test(pwd)) pool += 33;
+  if (pool === 0) pool = 1;
+
+  const combinations = Math.pow(pool, len);
+  const guessesPerSec = 1e11; // 100 billion/sec (hashcat cluster)
+  const seconds = combinations / (2 * guessesPerSec);
+
+  if (seconds < 1) return 'Instant (< 1 sec)';
+  if (seconds < 60) return `${Math.round(seconds)} seconds`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)} minutes`;
+  if (seconds < 86400) return `${Math.round(seconds / 3600)} hours`;
+  if (seconds < 31536000) return `${Math.round(seconds / 86400)} days`;
+  if (seconds < 3153600000) return `${Math.round(seconds / 31536000)} years`;
+  if (seconds < 315360000000) return `${Math.round(seconds / 3153600000)} centuries`;
+  return 'Trillions of years';
+}
+
+function analyzePassword(pwd) {
+  if (!pwd) {
+    strengthSection.style.display = 'none';
+    commonBanner.style.display = 'none';
+    adviceBanner.style.display = 'none';
+    allGoodBanner.style.display = 'none';
+    breachBtn.disabled = true;
+    analyzerCopyBtn.disabled = true;
+    return;
+  }
+
+  analyzerCopyBtn.disabled = false;
+  breachBtn.disabled = false;
+  strengthSection.style.display = 'block';
+
+  const score = evaluatePasswordScore(pwd);
+  statScore.textContent = `${score}/15`;
+  statCrack.textContent = estimateCrackTime(pwd);
+
+  const pct = Math.round((score / 15) * 100);
+  strengthPct.textContent = `${pct}%`;
+  strengthFill.style.width = `${pct}%`;
+
+  const commonList = ['password', '123456', 'qwerty', 'admin', 'welcome', 'letmein', 'football', 'monkey'];
+  const isCommon = commonList.includes(pwd.toLowerCase());
+  commonBanner.style.display = isCommon ? 'flex' : 'none';
+
+  // Advice
+  const advice = [];
+  if (pwd.length < 12) advice.push('Increase length to at least 12–16 characters.');
+  if (!/[A-Z]/.test(pwd)) advice.push('Add uppercase letters (A–Z).');
+  if (!/[a-z]/.test(pwd)) advice.push('Add lowercase letters (a–z).');
+  if (!/[0-9]/.test(pwd)) advice.push('Include numerical digits (0–9).');
+  if (!/[^a-zA-Z0-9]/.test(pwd)) advice.push('Add special symbols (!@#$%^&*).');
+
+  if (advice.length > 0 && !isCommon) {
+    adviceList.innerHTML = advice.map(a => `<li>${a}</li>`).join('');
+    adviceBanner.style.display = 'flex';
+    allGoodBanner.style.display = 'none';
+  } else if (!isCommon) {
+    adviceBanner.style.display = 'none';
+    allGoodBanner.style.display = 'flex';
+  }
+
+  // Label & color
+  if (score >= 11 && !isCommon) {
+    strengthTag.textContent = 'Strong';
+    strengthTag.style.color = 'var(--strong)';
+    strengthFill.style.backgroundColor = 'var(--strong)';
+    confidenceBadge.textContent = 'High Confidence';
+  } else if (score >= 6 && !isCommon) {
+    strengthTag.textContent = 'Medium';
+    strengthTag.style.color = 'var(--medium)';
+    strengthFill.style.backgroundColor = 'var(--medium)';
+    confidenceBadge.textContent = 'Moderate';
+  } else {
+    strengthTag.textContent = 'Weak';
+    strengthTag.style.color = 'var(--weak)';
+    strengthFill.style.backgroundColor = 'var(--weak)';
+    confidenceBadge.textContent = 'High Risk';
+  }
+}
+
+analyzerPasswordInput.addEventListener('input', (e) => {
+  analyzePassword(e.target.value);
+});
+
+toggleAnalyzerEye.addEventListener('click', () => {
+  const isPass = analyzerPasswordInput.type === 'password';
+  analyzerPasswordInput.type = isPass ? 'text' : 'password';
+  analyzerEyeOpen.style.display = isPass ? 'none' : 'block';
+  analyzerEyeClosed.style.display = isPass ? 'block' : 'none';
+});
+
+analyzerGenBtn.addEventListener('click', () => {
+  const generated = generateStrongPassword(20);
+  analyzerPasswordInput.value = generated;
+  analyzePassword(generated);
+});
+
+analyzerCopyBtn.addEventListener('click', async () => {
+  const pwd = analyzerPasswordInput.value;
+  if (!pwd) return;
+  await window.securePassAPI.copyToClipboard(pwd, true);
+  analyzerCopyIcon.style.display = 'none';
+  analyzerCheckIcon.style.display = 'block';
+  showToast('Copied to clipboard! (Auto-clears in 30s)');
+  setTimeout(() => {
+    analyzerCopyIcon.style.display = 'block';
+    analyzerCheckIcon.style.display = 'none';
+  }, 2000);
+});
+
+// Breach check with HIBP k-anonymity (SHA-1 hash prefix)
+breachBtn.addEventListener('click', async () => {
+  const pwd = analyzerPasswordInput.value;
+  if (!pwd) return;
+
+  breachBtn.disabled = true;
+  breachBtn.querySelector('span').textContent = 'Checking breach records…';
+  breachDangerBanner.style.display = 'none';
+  breachSafeBanner.style.display = 'none';
+
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pwd);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+    const prefix = hashHex.substring(0, 5);
+    const suffix = hashHex.substring(5);
+
+    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+    const text = await response.text();
+
+    const lines = text.split('\n');
+    let matchCount = 0;
+    for (const line of lines) {
+      const [hashPart, count] = line.trim().split(':');
+      if (hashPart === suffix) {
+        matchCount = parseInt(count, 10);
+        break;
+      }
+    }
+
+    if (matchCount > 0) {
+      breachDangerText.textContent = `Warning: This password was exposed in ${matchCount.toLocaleString()} known data breaches. Do not use it for any sensitive account.`;
+      breachDangerBanner.style.display = 'flex';
+    } else {
+      breachSafeBanner.style.display = 'flex';
+    }
+  } catch (err) {
+    showToast('Could not reach breach database. Check your internet connection.');
+  } finally {
+    breachBtn.disabled = false;
+    breachBtn.querySelector('span').textContent = 'Check known breaches (k-anonymity)';
+  }
+});
+
+// -------------------------------------------------------------
+// 5. SETTINGS & BACKUP
+// -------------------------------------------------------------
+exportEncryptedBtn.addEventListener('click', async () => {
+  const res = await window.securePassAPI.vaultExportBackup();
+  if (res.backup) {
+    const blob = new Blob([res.backup], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `securepass-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Vault backup exported.');
+  }
+});
+
+importBackupBtn.addEventListener('click', () => {
+  backupFileInput.click();
+});
+
+backupFileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    try {
+      const content = event.target.result;
+      const res = await window.securePassAPI.vaultImportBackup(content);
+      if (res.error) {
+        alert(`Failed to import backup: ${res.error}`);
+      } else {
+        await refreshVaultItems();
+        showToast(`Successfully imported ${res.count} items!`);
+      }
+    } catch (err) {
+      alert('Invalid backup JSON file.');
+    }
+  };
+  reader.readAsText(file);
+});
+
+// Helper
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+}
+
+// Start app
+initApp();

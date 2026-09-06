@@ -1,0 +1,45 @@
+{
+  "name": "securepass-desktop",
+  "version": "1.0.0",
+  "description": "SecurePass - Minimalist Zero-Knowledge Windows Password Manager & ML Security Analyzer",
+  "main": "main.js",
+  "author": "Shivang",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test:crypto": "node test-crypto.js",
+    "pack:win": "electron-builder --win --dir",
+    "dist:win": "electron-builder --win portable nsis"
+  },
+  "devDependencies": {
+    "electron": "^34.3.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.shivang.securepass",
+    "productName": "SecurePass",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "sign": null,
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SecurePass",
+      "artifactName": "SecurePass-Setup-${version}.exe"
+    },
+    "files": [
+      "**/*",
+      "!test-crypto.js",
+      "!dist/**/*"
+    ]
+  }
+}
