@@ -1,6 +1,6 @@
 {
   "name": "securepass-desktop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "SecurePass - Minimalist Zero-Knowledge Windows Password Manager & ML Security Analyzer",
   "main": "main.js",
   "author": "Shivang",
@@ -24,7 +24,8 @@
     "win": {
       "sign": null,
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ]
     },
     "nsis": {
@@ -34,7 +35,10 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "SecurePass",
-      "artifactName": "SecurePass-Setup-${version}.exe"
+      "artifactName": "SecurePass-Setup-v${version}.exe"
+    },
+    "portable": {
+      "artifactName": "SecurePass-v${version}-Portable.exe"
     },
     "files": [
       "**/*",
