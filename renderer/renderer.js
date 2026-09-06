@@ -36,6 +36,8 @@ const authErrorText = document.getElementById('authErrorText');
 const toggleAuthEye = document.getElementById('toggleAuthEye');
 const authEyeOpen = document.getElementById('authEyeOpen');
 const authEyeClosed = document.getElementById('authEyeClosed');
+const resetVaultContainer = document.getElementById('resetVaultContainer');
+const resetVaultBtn = document.getElementById('resetVaultBtn');
 
 // Vault DOM
 const itemsList = document.getElementById('itemsList');
@@ -138,12 +140,14 @@ async function initApp() {
     authTitle.textContent = 'Create Master Password';
     authSubtitle.textContent = 'Set a master password to encrypt your vault. Write this down — zero-knowledge means it cannot be recovered if lost!';
     confirmPasswordGroup.style.display = 'block';
+    if (resetVaultContainer) resetVaultContainer.style.display = 'none';
     authSubmitBtn.querySelector('span').textContent = 'Create Master Vault';
   } else {
     state.isSetupMode = false;
     authTitle.textContent = 'Unlock Your Vault';
     authSubtitle.textContent = 'Zero-knowledge AES-256-GCM encryption. Enter your master password to unlock.';
     confirmPasswordGroup.style.display = 'none';
+    if (resetVaultContainer) resetVaultContainer.style.display = 'block';
     authSubmitBtn.querySelector('span').textContent = 'Unlock Vault';
   }
 }
@@ -203,6 +207,30 @@ toggleAuthEye.addEventListener('click', () => {
   authEyeClosed.style.display = isPass ? 'block' : 'none';
 });
 
+if (resetVaultBtn) {
+  resetVaultBtn.addEventListener('click', async () => {
+    const confirmed = confirm('Are you sure you want to reset your vault? This will permanently delete any existing encrypted vault file and allow you to set a brand new master password.');
+    if (!confirmed) return;
+
+    const res = await window.securePassAPI.vaultReset();
+    if (res && res.error) {
+      showAuthError(`Failed to reset vault: ${res.error}`);
+      return;
+    }
+
+    state.isSetupMode = true;
+    authTitle.textContent = 'Create Master Password';
+    authSubtitle.textContent = 'Set a master password to encrypt your vault. Write this down — zero-knowledge means it cannot be recovered if lost!';
+    confirmPasswordGroup.style.display = 'block';
+    if (resetVaultContainer) resetVaultContainer.style.display = 'none';
+    authSubmitBtn.querySelector('span').textContent = 'Create Master Vault';
+    masterPasswordInput.value = '';
+    confirmPasswordInput.value = '';
+    hideAuthError();
+    showToast('Vault reset. You can now set your new master password.');
+  });
+}
+
 async function onVaultUnlocked() {
   masterPasswordInput.value = '';
   confirmPasswordInput.value = '';
@@ -228,6 +256,7 @@ async function lockVault() {
   state.isSetupMode = false;
   authTitle.textContent = 'Unlock Your Vault';
   confirmPasswordGroup.style.display = 'none';
+  if (resetVaultContainer) resetVaultContainer.style.display = 'block';
   authSubmitBtn.querySelector('span').textContent = 'Unlock Vault';
   showToast('Vault locked.');
 }

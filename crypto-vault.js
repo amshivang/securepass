@@ -183,6 +183,20 @@ class CryptoVault {
   }
 
   /**
+   * Reset vault, locking session and permanently deleting the vault file from disk
+   */
+  reset() {
+    this.lock();
+    if (this.exists()) {
+      fs.unlinkSync(this.vaultFilePath);
+    }
+    if (fs.existsSync(`${this.vaultFilePath}.tmp`)) {
+      fs.unlinkSync(`${this.vaultFilePath}.tmp`);
+    }
+    return { success: true };
+  }
+
+  /**
    * Rotate master password, re-encrypting vault under a fresh salt and new key
    */
   changeMasterPassword(currentPassword, newPassword) {

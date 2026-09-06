@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 const { CryptoVault } = require('../crypto-vault');
@@ -377,6 +377,14 @@ try {
     () => saltVault.changeMasterPassword(newMasterPassword, 'AnotherNewPassword!2027'),
     /Vault is locked. Unlock before performing operations./
   );
+
+  // Test reset()
+  saltVault.unlock(newMasterPassword);
+  assert.strictEqual(saltVault.exists(), true);
+  const resetRes = saltVault.reset();
+  assert.deepStrictEqual(resetRes, { success: true });
+  assert.strictEqual(saltVault.exists(), false);
+  assert.strictEqual(saltVault.isUnlocked, false);
 
   console.log('✓ All CryptoVault tests passed.');
 } finally {

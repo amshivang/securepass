@@ -14,6 +14,10 @@ let lastSensitiveCopied = null;
 let vault = null;
 
 function getVaultPath() {
+  if (process.env.PORTABLE_EXECUTABLE_DIR) {
+    const portableDataDir = path.join(process.env.PORTABLE_EXECUTABLE_DIR, 'securepass-data');
+    return path.join(portableDataDir, 'vault.enc');
+  }
   const userDataPath = app.getPath('userData');
   return path.join(userDataPath, 'vault.enc');
 }
@@ -95,6 +99,16 @@ app.whenReady().then(() => {
   // IPC: Lock vault
   ipcMain.handle('vault:lock', async () => {
     return vault.lock();
+  });
+
+  // IPC: Reset vault
+  ipcMain.handle('vault:reset', async () => {
+    try {
+      if (!vault) throw new Error('Vault not initialized.');
+      return vault.reset();
+    } catch (err) {
+      return { error: err.message };
+    }
   });
 
   // IPC: Change Master Password
