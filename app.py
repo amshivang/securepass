@@ -165,7 +165,11 @@ def internal_error_handler(e):
 # ── Health check for Cloud Run / load balancers ──────────────────────────────
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "model": _agent.model_name}), 200
+    return jsonify({
+        "status": "ok",
+        "model": _agent.model_name,
+        "version": "2.2.0",
+    }), 200
 
 
 # ── Local dev entry point ────────────────────────────────────────────────────
