@@ -4,17 +4,29 @@
  * ponytail: Clean IPC routing and zero boilerplate, using native Node.js and Electron APIs.
  */
 
-const { app, BrowserWindow, ipcMain, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, shell } = require('electron');
 const path = require('path');
 const { CryptoVault } = require('./crypto-vault');
 
 let mainWindow = null;
 let clipboardTimeout = null;
+let lastSensitiveCopied = null;
 let vault = null;
 
 function getVaultPath() {
   const userDataPath = app.getPath('userData');
   return path.join(userDataPath, 'vault.enc');
+}
+
+function flushSensitiveClipboard() {
+  if (lastSensitiveCopied && clipboard.readText() === lastSensitiveCopied) {
+    clipboard.clear();
+  }
+  if (clipboardTimeout) {
+    clearTimeout(clipboardTimeout);
+    clipboardTimeout = null;
+  }
+  lastSensitiveCopied = null;
 }
 
 function createWindow() {
@@ -40,8 +52,16 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https:') || url.startsWith('http:')) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
+    flushSensitiveClipboard();
     if (vault) vault.lock();
   });
 }
@@ -155,12 +175,14 @@ app.whenReady().then(() => {
     clipboard.writeText(text);
 
     if (isSensitive) {
+      lastSensitiveCopied = text;
       if (clipboardTimeout) clearTimeout(clipboardTimeout);
       clipboardTimeout = setTimeout(() => {
         // Only clear if the user hasn't copied something else in between
         if (clipboard.readText() === text) {
           clipboard.clear();
         }
+        lastSensitiveCopied = null;
       }, 30000); // 30 seconds
     }
     return { success: true };
@@ -181,6 +203,10 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on('before-quit', () => {
+  flushSensitiveClipboard();
 });
 
 app.on('window-all-closed', () => {
