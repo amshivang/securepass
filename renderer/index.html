@@ -252,6 +252,22 @@
         </div>
 
         <div class="settings-card">
+          <h3>Inactivity Auto-Lock</h3>
+          <p class="settings-desc">Automatically lock your vault when no keyboard or mouse activity is detected.</p>
+          <div class="form-group" style="margin-top: 14px; max-width: 320px;">
+            <label for="autoLockSelect">Lock after inactivity:</label>
+            <select id="autoLockSelect" class="text-input" style="background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; width: 100%; margin-top: 6px;">
+              <option value="1">1 minute</option>
+              <option value="5">5 minutes</option>
+              <option value="15" selected>15 minutes (Default)</option>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="0">Never (Manual lock only)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-card">
           <h3>Vault Backup & Portability</h3>
           <p class="settings-desc">Export your encrypted vault to keep a safe backup on an external drive or transfer to another machine.</p>
           <div class="settings-actions">

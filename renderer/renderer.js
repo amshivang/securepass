@@ -90,6 +90,7 @@ const breachDangerText = document.getElementById('breachDangerText');
 const breachSafeBanner = document.getElementById('breachSafeBanner');
 
 // Settings DOM
+const autoLockSelect = document.getElementById('autoLockSelect');
 const exportEncryptedBtn = document.getElementById('exportEncryptedBtn');
 const exportPlaintextBtn = document.getElementById('exportPlaintextBtn');
 const importBackupBtn = document.getElementById('importBackupBtn');
@@ -116,6 +117,15 @@ function showToast(message) {
 // 1. INITIALIZATION & AUTH
 // -------------------------------------------------------------
 async function initApp() {
+  const savedAutoLock = localStorage.getItem('securepass_autolock_minutes');
+  state.autoLockMinutes = savedAutoLock !== null ? parseInt(savedAutoLock, 10) : 15;
+  if (isNaN(state.autoLockMinutes)) {
+    state.autoLockMinutes = 15;
+  }
+  if (autoLockSelect) {
+    autoLockSelect.value = String(state.autoLockMinutes);
+  }
+
   resetInactivityTimer();
   ['click', 'keydown', 'mousemove'].forEach(evt => {
     window.addEventListener(evt, resetInactivityTimer, { passive: true });
@@ -225,6 +235,8 @@ lockVaultBtn.addEventListener('click', lockVault);
 
 function resetInactivityTimer() {
   if (state.inactivityTimer) clearTimeout(state.inactivityTimer);
+  if (state.autoLockMinutes <= 0) return;
+
   state.inactivityTimer = setTimeout(() => {
     if (navTabs.style.display !== 'none') {
       lockVault();
@@ -714,6 +726,16 @@ breachBtn.addEventListener('click', async () => {
 // -------------------------------------------------------------
 // 5. SETTINGS & BACKUP
 // -------------------------------------------------------------
+if (autoLockSelect) {
+  autoLockSelect.addEventListener('change', () => {
+    const mins = parseInt(autoLockSelect.value, 10);
+    state.autoLockMinutes = isNaN(mins) ? 15 : mins;
+    localStorage.setItem('securepass_autolock_minutes', state.autoLockMinutes);
+    resetInactivityTimer();
+    showToast(state.autoLockMinutes === 0 ? 'Auto-lock disabled.' : `Auto-lock set to ${state.autoLockMinutes} minute${state.autoLockMinutes > 1 ? 's' : ''}.`);
+  });
+}
+
 exportEncryptedBtn.addEventListener('click', async () => {
   const res = await window.securePassAPI.vaultExportEncryptedBackup();
   if (res.error) {
