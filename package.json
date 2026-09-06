@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "test": "node tests/crypto-vault.test.js",
+    "test": "node tests/crypto-vault.test.js && node tests/analyzer.test.js",
     "pack:win": "electron-builder --win --dir",
     "dist:win": "electron-builder --win"
   },

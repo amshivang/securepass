@@ -533,56 +533,6 @@ function generateStrongPassword(length = 18) {
   return result;
 }
 
-function calculateShannonEntropy(str) {
-  if (!str) return 0;
-  const len = str.length;
-  const freq = {};
-  for (const ch of str) freq[ch] = (freq[ch] || 0) + 1;
-  let entropy = 0;
-  for (const ch in freq) {
-    const p = freq[ch] / len;
-    entropy -= p * Math.log2(p);
-  }
-  return entropy;
-}
-
-function evaluatePasswordScore(pwd) {
-  if (!pwd) return 0;
-  let score = 0;
-  if (pwd.length >= 8) score += 2;
-  if (pwd.length >= 12) score += 3;
-  if (pwd.length >= 16) score += 2;
-  if (/[a-z]/.test(pwd)) score += 1;
-  if (/[A-Z]/.test(pwd)) score += 2;
-  if (/[0-9]/.test(pwd)) score += 2;
-  if (/[^a-zA-Z0-9]/.test(pwd)) score += 3;
-  return Math.min(15, score);
-}
-
-function estimateCrackTime(pwd) {
-  if (!pwd) return 'Instant';
-  const len = pwd.length;
-  let pool = 0;
-  if (/[a-z]/.test(pwd)) pool += 26;
-  if (/[A-Z]/.test(pwd)) pool += 26;
-  if (/[0-9]/.test(pwd)) pool += 10;
-  if (/[^a-zA-Z0-9]/.test(pwd)) pool += 33;
-  if (pool === 0) pool = 1;
-
-  const combinations = Math.pow(pool, len);
-  const guessesPerSec = 1e11; // 100 billion/sec (hashcat cluster)
-  const seconds = combinations / (2 * guessesPerSec);
-
-  if (seconds < 1) return 'Instant (< 1 sec)';
-  if (seconds < 60) return `${Math.round(seconds)} seconds`;
-  if (seconds < 3600) return `${Math.round(seconds / 60)} minutes`;
-  if (seconds < 86400) return `${Math.round(seconds / 3600)} hours`;
-  if (seconds < 31536000) return `${Math.round(seconds / 86400)} days`;
-  if (seconds < 3153600000) return `${Math.round(seconds / 31536000)} years`;
-  if (seconds < 315360000000) return `${Math.round(seconds / 3153600000)} centuries`;
-  return 'Trillions of years';
-}
-
 function analyzePassword(pwd) {
   if (!pwd) {
     strengthSection.style.display = 'none';
@@ -598,8 +548,9 @@ function analyzePassword(pwd) {
   breachBtn.disabled = false;
   strengthSection.style.display = 'block';
 
+  const entropy = calculateShannonEntropy(pwd);
   const score = evaluatePasswordScore(pwd);
-  statScore.textContent = `${score}/15`;
+  statScore.textContent = `${score}/15 (${entropy.toFixed(1)} bits)`;
   statCrack.textContent = estimateCrackTime(pwd);
 
   const pct = Math.round((score / 15) * 100);
@@ -628,21 +579,22 @@ function analyzePassword(pwd) {
   }
 
   // Label & color
+  const entropyLabel = `${entropy.toFixed(1)} bits entropy`;
   if (score >= 11 && !isCommon) {
     strengthTag.textContent = 'Strong';
     strengthTag.style.color = 'var(--strong)';
     strengthFill.style.backgroundColor = 'var(--strong)';
-    confidenceBadge.textContent = 'High Confidence';
+    confidenceBadge.textContent = `High Confidence (${entropyLabel})`;
   } else if (score >= 6 && !isCommon) {
     strengthTag.textContent = 'Medium';
     strengthTag.style.color = 'var(--medium)';
     strengthFill.style.backgroundColor = 'var(--medium)';
-    confidenceBadge.textContent = 'Moderate';
+    confidenceBadge.textContent = `Moderate (${entropyLabel})`;
   } else {
     strengthTag.textContent = 'Weak';
     strengthTag.style.color = 'var(--weak)';
     strengthFill.style.backgroundColor = 'var(--weak)';
-    confidenceBadge.textContent = 'High Risk';
+    confidenceBadge.textContent = `High Risk (${entropyLabel})`;
   }
 }
 
