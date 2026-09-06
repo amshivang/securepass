@@ -1,7 +1,8 @@
 # 🛡️ SecurePass — Zero-Knowledge Windows Password Manager & Security Analyzer
 
-[![Release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](https://github.com/amshivang/securepass/releases)
+[![Release](https://img.shields.io/badge/release-v1.1-blue.svg)](https://github.com/amshivang/securepass/releases/tag/v1.1)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6.svg?logo=windows)](https://github.com/amshivang/securepass/releases)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#-testing)
 [![Security](https://img.shields.io/badge/encryption-AES--256--GCM-green.svg)](#-zero-knowledge-security-architecture)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -11,14 +12,14 @@ Your master password never leaves your device. All your logins, payment cards, a
 
 ---
 
-## 📥 Downloads (Release v1.0.0)
+## 📥 Downloads (Release v1.1)
 
-SecurePass is available in two distribution formats on our [**Releases Page**](https://github.com/amshivang/securepass/releases/tag/v1.0.0):
+SecurePass is available in two distribution formats on our [**Releases Page**](https://github.com/amshivang/securepass/releases/tag/v1.1):
 
 | Download Type | File Name | Description |
 | :--- | :--- | :--- |
-| **🚀 Windows Installer (Recommended)** | `SecurePass-Setup-1.0.0.exe` | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
-| **💼 Portable Executable** | `SecurePass-1.0.0-Portable.exe` | Standalone executable. Runs instantly with zero installation, perfect for running off USB drives. |
+| **🚀 Windows Installer (Recommended)** | `SecurePass-Setup-v1.1.exe` | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
+| **💼 Portable Executable** | `SecurePass-v1.1-Portable.exe` | Standalone executable. Runs instantly with zero installation, perfect for running off USB drives. |
 
 ---
 
@@ -27,6 +28,7 @@ SecurePass is available in two distribution formats on our [**Releases Page**](h
 ### 🔐 1. Zero-Knowledge Cryptographic Vault
 * **Authenticated AES-256-GCM Encryption:** Every credential (title, username, password, URL, notes) is encrypted into an authenticated ciphertext envelope before being saved to disk.
 * **PBKDF2-HMAC-SHA256 Key Derivation:** Uses 100,000 iterations and a cryptographically secure 16-byte random salt to derive the vault encryption key from your Master Password.
+* **Master Password Rotation:** Rotate your master password at any time. SecurePass re-derives the key, generates a fresh random salt, and re-encrypts the entire vault using `crypto.timingSafeEqual` authentication.
 * **Zero-Knowledge Architecture:** Your master password is never stored on disk or transmitted across any network. Only someone with your exact master password can decrypt the vault.
 * **RAM Key Zeroing:** When the vault is locked or the application is closed, the derived encryption key buffer in memory is immediately cleared and zeroed out.
 * **Atomic File Writes:** Prevents file corruption during unexpected power outages or app shutdowns by using atomic rename operations.
@@ -36,7 +38,8 @@ SecurePass is available in two distribution formats on our [**Releases Page**](h
 * **Instant Fuzzy Search:** Filter through all your saved accounts and notes in real-time as you type.
 * **One-Click Quick Copy:**
   * **Copy Username:** Instant copy with toast confirmation.
-  * **Copy Password with Auto-Clear:** Copies the password and automatically triggers a 30-second countdown that wipes your Windows clipboard to protect sensitive credentials from background spyware.
+  * **Copy Password with Auto-Clear:** Copies the password and automatically triggers a 30-second countdown that wipes your Windows clipboard.
+  * **Immediate Exit Flush:** If you close or exit the app while a sensitive password is still in the clipboard, it is flushed immediately.
 * **CRUD Capabilities:** Easily add, edit, view, or permanently delete items.
 * **In-Modal Generator:** Generate high-entropy passwords with real-time strength feedback without leaving the item creation form.
 
@@ -48,11 +51,15 @@ SecurePass is available in two distribution formats on our [**Releases Page**](h
 * **Cryptographic Generator:** Generates 18–20 character cryptographically secure passwords client-side using `crypto.getRandomValues`.
 * **k-Anonymity Breach Checker:** An opt-in breach scanner that queries HaveIBeenPwned's API using 5-character SHA-1 hash prefixes (k-anonymity) — your actual password never leaves your computer.
 
-### ⚙️ 4. Security Controls & Data Portability
+### ⚙️ 4. Security Hardening, Controls & Portability
+* **Master Password Rotation:** Update your master password safely inside Settings; all vault data is automatically re-encrypted with a brand new salt.
+* **True Encrypted Backups:** Export your entire vault as an encrypted AES-256-GCM ciphertext JSON envelope for cold storage or device migration.
+* **Plaintext Backup with Safeguards:** Explicit plaintext export option guarded by a clear security confirmation prompt.
+* **Import Backup:** Restore your credentials from an encrypted backup envelope at any time.
 * **Inactivity Auto-Lock:** Automatically locks your vault after 15 minutes of inactivity to protect your credentials when stepping away from your PC.
 * **Quick Lock Button:** Immediately lock your vault with a single click in the top header.
-* **Encrypted Backups:** Export your entire vault as an encrypted JSON backup file for safe keeping on cold storage or migration to another PC.
-* **Import Backup:** Restore your credentials from an encrypted backup at any time.
+* **Content Security Policy (CSP):** Strict CSP meta headers blocking unauthorized remote scripts and origins.
+* **Safe External Navigation:** External hyperlinks are intercepted and safely opened in the user's default system browser using `shell.openExternal`.
 
 ---
 
@@ -97,7 +104,36 @@ SecurePass follows the same zero-knowledge client encryption principles used by 
 | **Cryptography** | Node.js Native `crypto` (OpenSSL) | PBKDF2 key derivation and AES-256-GCM encryption |
 | **Frontend UI** | Vanilla HTML5, CSS3, JavaScript | Lightweight, zero-bloat, high-performance UI |
 | **Entropy Math** | Web Crypto API | Cryptographically secure random generation & hashing |
+| **Testing** | Node.js native `assert` & `crypto` | Zero-dependency cryptographic test suite |
 | **Packaging** | `electron-builder` | Windows NSIS installer and Portable executable builds |
+
+---
+
+## 🧪 Testing
+
+SecurePass includes a comprehensive, zero-dependency automated test suite covering all cryptographic vault operations:
+
+```bash
+npm test
+```
+
+The test suite validates:
+* Vault initialization, credential CRUD, and atomic disk persistence.
+* Memory key zeroing and lock integrity.
+* Decryption failure and clean rejection on invalid master passwords.
+* Ciphertext tampering detection using AES-256-GCM authentication tags.
+* Encrypted backup export and roundtrip import.
+* Master password rotation, timing-safe validation, and re-encryption under fresh salts.
+
+---
+
+## 📐 Implementation & Improvement Plans
+
+All major features and security audits follow structured, self-contained implementation plans located in the [`plans/`](plans/README.md) directory:
+* [`001`: Establish Automated CryptoVault Test Suite Baseline](plans/001-crypto-vault-automated-test-suite.md)
+* [`002`: Fix Backup Encryption and Salt Regeneration Bug](plans/002-fix-backup-encryption-and-salt-bug.md)
+* [`003`: Security Hardening: Clipboard Flush on Exit and CSP Protection](plans/003-security-hardening-clipboard-and-csp.md)
+* [`004`: Implement "Change Master Password" Workflow](plans/004-change-master-password.md)
 
 ---
 
