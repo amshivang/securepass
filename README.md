@@ -1,7 +1,7 @@
 # 🛡️ SecurePass — Zero-Knowledge Windows Password Manager & Security Analyzer
 
-[![Release](https://img.shields.io/badge/release-v1.2.0-blue.svg)](https://github.com/amshivang/securepass/releases/tag/v1.2.0)
-[![Platform](https://img.shields.io/badge/platform-Windows-0078D6.svg?logo=windows)](https://github.com/amshivang/securepass/releases)
+[![Release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](#-downloads-release-v100)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6.svg?logo=windows)](#-downloads-release-v100)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#-testing)
 [![Security](https://img.shields.io/badge/encryption-AES--256--GCM-green.svg)](#-zero-knowledge-security-architecture)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
@@ -12,14 +12,12 @@ Your master password never leaves your device. All your logins, 2FA authenticato
 
 ---
 
-## 📥 Downloads (Release v1.2.0)
-
-SecurePass is available in two distribution formats on our [**Releases Page**](https://github.com/amshivang/securepass/releases/tag/v1.2.0):
+## 📥 Downloads (Release v1.0.0)
 
 | Download Type | File Name | Description |
 | :--- | :--- | :--- |
-| **🚀 Windows Installer (Recommended)** | `SecurePass-Setup-v1.2.0.exe` | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
-| **💼 Portable Executable** | `SecurePass-v1.2.0-Portable.exe` | Standalone executable. Runs instantly with zero installation, perfect for running off USB drives. |
+| **🚀 Windows Installer (Recommended)** | `SecurePass-Setup-1.0.0.exe` | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
+| **💼 Portable Executable** | `SecurePass-1.0.0-Portable.exe` | Standalone executable. Runs instantly with zero installation, perfect for running off USB drives. |
 
 ---
 
