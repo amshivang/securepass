@@ -103,6 +103,22 @@ const currentMasterPassword = document.getElementById('currentMasterPassword');
 const newMasterPassword = document.getElementById('newMasterPassword');
 const confirmNewMasterPassword = document.getElementById('confirmNewMasterPassword');
 
+// Backup Import Modal DOM
+const backupImportModal = document.getElementById('backupImportModal');
+const closeBackupImportModalBtn = document.getElementById('closeBackupImportModalBtn');
+const cancelBackupImportBtn = document.getElementById('cancelBackupImportBtn');
+const confirmBackupImportBtn = document.getElementById('confirmBackupImportBtn');
+const backupImportForm = document.getElementById('backupImportForm');
+const backupPasswordGroup = document.getElementById('backupPasswordGroup');
+const backupPasswordInput = document.getElementById('backupPasswordInput');
+const toggleBackupPasswordEye = document.getElementById('toggleBackupPasswordEye');
+const backupEyeOpen = document.getElementById('backupEyeOpen');
+const backupEyeClosed = document.getElementById('backupEyeClosed');
+const backupMergeMode = document.getElementById('backupMergeMode');
+const backupImportErrorBanner = document.getElementById('backupImportErrorBanner');
+const backupImportErrorText = document.getElementById('backupImportErrorText');
+let pendingBackupData = null;
+
 // Toast
 const appToast = document.getElementById('appToast');
 let toastTimeout = null;
@@ -852,50 +868,145 @@ if (exportPlaintextBtn) {
   });
 }
 
-importBackupBtn.addEventListener('click', () => {
-  backupFileInput.click();
-});
+function openBackupImportModal(content, isEncrypted) {
+  pendingBackupData = { content, isEncrypted };
 
-backupFileInput.addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  if (backupImportErrorBanner) backupImportErrorBanner.style.display = 'none';
+  if (backupImportErrorText) backupImportErrorText.textContent = '';
+  if (backupMergeMode) backupMergeMode.value = 'merge';
 
-  const reader = new FileReader();
-  reader.onload = async (event) => {
+  if (isEncrypted) {
+    if (backupPasswordGroup) backupPasswordGroup.style.display = 'block';
+    if (backupPasswordInput) {
+      backupPasswordInput.value = '';
+      backupPasswordInput.type = 'password';
+      backupPasswordInput.required = true;
+    }
+    if (backupEyeOpen) backupEyeOpen.style.display = 'block';
+    if (backupEyeClosed) backupEyeClosed.style.display = 'none';
+    if (backupImportModal) backupImportModal.style.display = 'flex';
+    if (backupPasswordInput) backupPasswordInput.focus();
+  } else {
+    if (backupPasswordGroup) backupPasswordGroup.style.display = 'none';
+    if (backupPasswordInput) {
+      backupPasswordInput.value = '';
+      backupPasswordInput.required = false;
+    }
+    if (backupImportModal) backupImportModal.style.display = 'flex';
+    if (backupMergeMode) backupMergeMode.focus();
+  }
+}
+
+function closeBackupImportModal() {
+  if (backupImportModal) backupImportModal.style.display = 'none';
+  if (backupImportErrorBanner) backupImportErrorBanner.style.display = 'none';
+  if (backupImportErrorText) backupImportErrorText.textContent = '';
+  if (backupPasswordInput) backupPasswordInput.value = '';
+  pendingBackupData = null;
+}
+
+function showBackupImportError(msg) {
+  if (backupImportErrorText) backupImportErrorText.textContent = msg;
+  if (backupImportErrorBanner) backupImportErrorBanner.style.display = 'flex';
+  showToast(msg);
+}
+
+if (closeBackupImportModalBtn) {
+  closeBackupImportModalBtn.addEventListener('click', closeBackupImportModal);
+}
+if (cancelBackupImportBtn) {
+  cancelBackupImportBtn.addEventListener('click', closeBackupImportModal);
+}
+
+if (toggleBackupPasswordEye) {
+  toggleBackupPasswordEye.addEventListener('click', () => {
+    if (!backupPasswordInput) return;
+    const isPass = backupPasswordInput.type === 'password';
+    backupPasswordInput.type = isPass ? 'text' : 'password';
+    if (backupEyeOpen) backupEyeOpen.style.display = isPass ? 'none' : 'block';
+    if (backupEyeClosed) backupEyeClosed.style.display = isPass ? 'block' : 'none';
+  });
+}
+
+if (backupImportForm) {
+  backupImportForm.addEventListener('submit', async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!pendingBackupData) {
+      closeBackupImportModal();
+      return;
+    }
+
+    if (backupImportErrorBanner) backupImportErrorBanner.style.display = 'none';
+
+    const mergeMode = backupMergeMode ? backupMergeMode.value : 'merge';
+    const { content, isEncrypted } = pendingBackupData;
+
     try {
-      const content = event.target.result;
-      const parsed = JSON.parse(content);
-
-      if (parsed.salt && parsed.iv && parsed.tag && parsed.data) {
-        const password = prompt('This backup is encrypted. Enter the master password used to encrypt it:');
+      if (isEncrypted) {
+        const password = backupPasswordInput ? backupPasswordInput.value : '';
         if (!password) {
-          showToast('Import cancelled.');
+          showBackupImportError('Backup master password is required.');
           return;
         }
-        const res = await window.securePassAPI.vaultImportEncryptedBackup(content, password);
-        if (res.error) {
-          alert(`Failed to import encrypted backup: ${res.error}`);
-        } else {
-          await refreshVaultItems();
-          showToast(`Successfully imported ${res.count} items from encrypted backup!`);
+        const res = await window.securePassAPI.vaultImportEncryptedBackup(content, password, mergeMode);
+        if (res && res.error) {
+          showBackupImportError(res.error);
+          return;
         }
+        closeBackupImportModal();
+        await refreshVaultItems();
+        showToast(`Successfully imported ${res.count} items from encrypted backup!`);
       } else {
-        const res = await window.securePassAPI.vaultImportBackup(content);
-        if (res.error) {
-          alert(`Failed to import backup: ${res.error}`);
-        } else {
-          await refreshVaultItems();
-          showToast(`Successfully imported ${res.count} items!`);
+        const res = await window.securePassAPI.vaultImportBackup(content, mergeMode);
+        if (res && res.error) {
+          showBackupImportError(res.error);
+          return;
         }
+        closeBackupImportModal();
+        await refreshVaultItems();
+        showToast(`Successfully imported ${res.count} items!`);
       }
     } catch (err) {
-      alert('Invalid backup JSON file.');
-    } finally {
-      backupFileInput.value = '';
+      showBackupImportError(err.message || 'Import failed.');
     }
-  };
-  reader.readAsText(file);
-});
+  });
+}
+
+if (importBackupBtn) {
+  importBackupBtn.addEventListener('click', () => {
+    if (backupFileInput) backupFileInput.click();
+  });
+}
+
+if (backupFileInput) {
+  backupFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target.result;
+        const parsed = JSON.parse(content);
+
+        const isEncrypted = Boolean(parsed && parsed.salt && parsed.iv && parsed.tag && parsed.data);
+        const isPlaintext = Boolean(parsed && Array.isArray(parsed.items));
+
+        if (!isEncrypted && !isPlaintext) {
+          showToast('Invalid backup file: format not recognized.');
+          return;
+        }
+
+        openBackupImportModal(content, isEncrypted);
+      } catch (err) {
+        showToast('Invalid backup JSON file.');
+      } finally {
+        backupFileInput.value = '';
+      }
+    };
+    reader.readAsText(file);
+  });
+}
 
 // Change Master Password
 if (changePasswordForm) {

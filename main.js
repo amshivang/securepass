@@ -191,17 +191,17 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle('vault:import-encrypted-backup', async (_event, backupEnvelopeString, masterPassword) => {
+  ipcMain.handle('vault:import-encrypted-backup', async (_event, backupEnvelopeString, masterPassword, mergeMode = 'merge') => {
     try {
-      return vault.importEncryptedBackup(backupEnvelopeString, masterPassword);
+      return vault.importEncryptedBackup(backupEnvelopeString, masterPassword, mergeMode);
     } catch (err) {
       return { error: err.message };
     }
   });
 
-  ipcMain.handle('vault:import-backup', async (_event, jsonString) => {
+  ipcMain.handle('vault:import-backup', async (_event, jsonString, mergeMode = 'merge') => {
     try {
-      return vault.importBackup(jsonString);
+      return vault.importBackup(jsonString, mergeMode);
     } catch (err) {
       return { error: err.message };
     }

@@ -362,7 +362,7 @@ class CryptoVault {
     return this.exportEncryptedBackup();
   }
 
-  importEncryptedBackup(backupEnvelopeString, masterPassword) {
+  importEncryptedBackup(backupEnvelopeString, masterPassword, mergeMode = 'merge') {
     let envelope;
     try {
       envelope = typeof backupEnvelopeString === 'string' ? JSON.parse(backupEnvelopeString) : backupEnvelopeString;
@@ -401,6 +401,14 @@ class CryptoVault {
       throw new Error('Invalid backup payload: missing items array.');
     }
 
+    const effectiveMode = (!this.isUnlocked && !this.exists()) ? 'replace' : mergeMode;
+    if (effectiveMode === 'merge') {
+      this._ensureUnlocked();
+      const result = this._applyImportedItems(decryptedData.items, 'merge');
+      key.fill(0);
+      return result;
+    }
+
     // Atomic write to prevent partial writes
     const dir = path.dirname(this.vaultFilePath);
     if (!fs.existsSync(dir)) {
@@ -422,15 +430,42 @@ class CryptoVault {
     return { success: true, count: decryptedData.items.length };
   }
 
-  importBackup(jsonString) {
+  _applyImportedItems(incomingItems, mergeMode = 'merge') {
     this._ensureUnlocked();
-    const parsed = JSON.parse(jsonString);
-    if (!parsed.items || !Array.isArray(parsed.items)) {
-      throw new Error('Invalid backup file format.');
+    if (mergeMode === 'replace') {
+      this.unlockedData.items = incomingItems;
+    } else {
+      const existingMap = new Map();
+      for (const item of this.unlockedData.items) {
+        if (item.id) {
+          existingMap.set(item.id, item);
+        }
+      }
+      for (const item of incomingItems) {
+        if (item.id && existingMap.has(item.id)) {
+          // Update existing item with newer data
+          const existing = existingMap.get(item.id);
+          Object.assign(existing, item);
+        } else {
+          // Add new item
+          this.unlockedData.items.push(item);
+          if (item.id) {
+            existingMap.set(item.id, item);
+          }
+        }
+      }
     }
-    this.unlockedData.items = parsed.items;
     this.save();
-    return { success: true, count: parsed.items.length };
+    return { success: true, count: this.unlockedData.items.length };
+  }
+
+  importBackup(jsonString, mergeMode = 'merge') {
+    this._ensureUnlocked();
+    const parsed = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
+    if (!parsed.items || !Array.isArray(parsed.items)) {
+      throw new Error('Invalid backup file format: missing items array.');
+    }
+    return this._applyImportedItems(parsed.items, mergeMode);
   }
 
   _ensureUnlocked() {

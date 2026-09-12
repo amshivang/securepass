@@ -289,8 +289,115 @@ try {
   importedVault.lock();
   assert.strictEqual(importedVault.isUnlocked, false);
   importedVault.unlock(password);
-  assert.strictEqual(importedVault.isUnlocked, true);
   assert.strictEqual(importedVault.getItems()[0].password, 'SuperSecretAgentPassword!7');
+
+  // 9b. Backup Import Strategies (Merge vs Replace) and Deduplication
+  // importBackup requires unlocked vault
+  importedVault.lock();
+  assert.throws(
+    () => importedVault.importBackup(JSON.stringify({ items: [] })),
+    /Vault is locked\. Unlock before performing operations\./,
+    'importBackup must throw if vault is locked'
+  );
+  importedVault.unlock(password);
+
+  // Invalid backup file formats throw
+  assert.throws(
+    () => importedVault.importBackup(JSON.stringify({ notItems: [] })),
+    /Invalid backup file format: missing items array\./,
+    'importBackup with missing items array must throw'
+  );
+
+  const existingItem = importedVault.getItems()[0];
+  assert.ok(existingItem.id, 'Existing item must have an id');
+
+  // Test importBackup with mergeMode = 'merge'
+  // - Incoming has duplicate ID with updated fields
+  // - Incoming has brand new item ID
+  const mergeBackupPayload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    items: [
+      {
+        id: existingItem.id,
+        title: 'Secret Service (Updated Title)',
+        username: 'agent007-modified',
+        password: 'SuperSecretAgentPassword!7-Updated',
+        notes: 'Updated note field via merge'
+      },
+      {
+        id: 'new-item-uuid-999',
+        title: 'New Service Added Via Merge',
+        username: 'newuser@example.com',
+        password: 'NewItemSecurePassword!88',
+        category: 'Logins'
+      }
+    ]
+  };
+
+  const mergeResult = importedVault.importBackup(JSON.stringify(mergeBackupPayload), 'merge');
+  assert.strictEqual(mergeResult.success, true);
+  assert.strictEqual(mergeResult.count, 2, 'Vault should now have 2 items total');
+
+  const mergedItems = importedVault.getItems();
+  assert.strictEqual(mergedItems.length, 2);
+
+  // Verify duplicate ID was updated cleanly in-place without duplicating
+  const updatedExisting = mergedItems.find(i => i.id === existingItem.id);
+  assert.ok(updatedExisting, 'Original item ID should still exist');
+  assert.strictEqual(updatedExisting.title, 'Secret Service (Updated Title)');
+  assert.strictEqual(updatedExisting.username, 'agent007-modified');
+  assert.strictEqual(updatedExisting.password, 'SuperSecretAgentPassword!7-Updated');
+  assert.strictEqual(updatedExisting.notes, 'Updated note field via merge');
+
+  // Verify new item was added without data loss
+  const addedItem = mergedItems.find(i => i.id === 'new-item-uuid-999');
+  assert.ok(addedItem, 'New item should be present in merged vault');
+  assert.strictEqual(addedItem.title, 'New Service Added Via Merge');
+
+  // Verify persistence across lock/unlock
+  importedVault.lock();
+  importedVault.unlock(password);
+  assert.strictEqual(importedVault.getItems().length, 2, 'Merged items must persist across lock/unlock');
+
+  // Test importBackup with mergeMode = 'replace'
+  const replaceBackupPayload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    items: [
+      {
+        id: 'replacement-only-item',
+        title: 'Completely Replaced Item',
+        username: 'solo@example.com',
+        password: 'ReplacedOnlyPassword!1'
+      }
+    ]
+  };
+
+  const replaceResult = importedVault.importBackup(JSON.stringify(replaceBackupPayload), 'replace');
+  assert.strictEqual(replaceResult.success, true);
+  assert.strictEqual(replaceResult.count, 1, 'Vault should now contain exactly 1 item after replace');
+
+  const replacedItems = importedVault.getItems();
+  assert.strictEqual(replacedItems.length, 1);
+  assert.strictEqual(replacedItems[0].id, 'replacement-only-item');
+  assert.strictEqual(replacedItems[0].title, 'Completely Replaced Item');
+
+  // Verify persistence after replace across lock/unlock
+  importedVault.lock();
+  importedVault.unlock(password);
+  assert.strictEqual(importedVault.getItems().length, 1);
+  assert.strictEqual(importedVault.getItems()[0].id, 'replacement-only-item');
+
+  // Test importEncryptedBackup with mergeMode = 'merge' into an already unlocked vault
+  const encryptedPayloadToMerge = saltVault.exportEncryptedBackup();
+  const encryptedMergeResult = importedVault.importEncryptedBackup(encryptedPayloadToMerge, password, 'merge');
+  assert.strictEqual(encryptedMergeResult.success, true);
+  assert.strictEqual(encryptedMergeResult.count, 2, 'importEncryptedBackup with merge must merge incoming items');
+  const itemsAfterEncryptedMerge = importedVault.getItems();
+  assert.strictEqual(itemsAfterEncryptedMerge.length, 2);
+  assert.ok(itemsAfterEncryptedMerge.some(i => i.id === 'replacement-only-item'));
+  assert.ok(itemsAfterEncryptedMerge.some(i => i.title === 'Secret Service'));
 
   // 10. Master Password Rotation (changeMasterPassword)
   const preRotationSalt = saltVault.salt.toString('hex');
