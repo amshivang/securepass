@@ -124,16 +124,6 @@ The test suite validates:
 
 ---
 
-## 📐 Implementation & Improvement Plans
-
-All major features and security audits follow structured, self-contained implementation plans located in the [`plans/`](plans/README.md) directory:
-* [`001`: Establish Automated CryptoVault Test Suite Baseline](plans/001-crypto-vault-automated-test-suite.md)
-* [`002`: Fix Backup Encryption and Salt Regeneration Bug](plans/002-fix-backup-encryption-and-salt-bug.md)
-* [`003`: Security Hardening: Clipboard Flush on Exit and CSP Protection](plans/003-security-hardening-clipboard-and-csp.md)
-* [`004`: Implement "Change Master Password" Workflow](plans/004-change-master-password.md)
-
----
-
 ## 💻 Building from Source (Local Development)
 
 ### Prerequisites
