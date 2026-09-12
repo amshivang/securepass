@@ -53,7 +53,7 @@
           <h2 id="authTitle" class="auth-title">Unlock Your Vault</h2>
           <p id="authSubtitle" class="auth-desc">Zero-knowledge AES-256-GCM encryption. Your master password is never sent to any server.</p>
 
-          <form id="authForm" class="auth-form" onsubmit="return false;">
+          <form id="authForm" class="auth-form">
             <div class="input-group">
               <input id="masterPasswordInput" type="password" class="password-input" placeholder="Enter Master Password" autocomplete="current-password" required />
               <button type="button" id="toggleAuthEye" class="toggle-btn" aria-label="Toggle password visibility">
@@ -296,7 +296,7 @@
         <div class="settings-card">
           <h3>Change Master Password</h3>
           <p class="settings-desc">Update your master password. All vault data will be re-encrypted using a new cryptographic salt.</p>
-          <form id="changePasswordForm" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px; max-width: 420px;">
+          <form id="changePasswordForm" style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px; max-width: 420px;">
             <div class="form-group">
               <label for="currentMasterPassword">Current Master Password</label>
               <input type="password" id="currentMasterPassword" class="input-text" placeholder="Enter current password" autocomplete="current-password" required />
@@ -325,10 +325,10 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="modalTitle">Add New Credential</h3>
-        <button id="closeModalBtn" class="icon-close-btn">&times;</button>
+        <button type="button" id="closeModalBtn" class="icon-close-btn">&times;</button>
       </div>
 
-      <form id="itemForm" onsubmit="return false;">
+      <form id="itemForm">
         <input type="hidden" id="itemId" />
 
         <div class="form-group">
@@ -397,7 +397,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="backupImportTitle">Import Backup</h3>
-        <button id="closeBackupImportModalBtn" class="icon-close-btn">&times;</button>
+        <button type="button" id="closeBackupImportModalBtn" class="icon-close-btn">&times;</button>
       </div>
 
       <p id="backupImportDesc" class="settings-desc" style="margin-bottom: 16px;">
@@ -410,7 +410,7 @@
         </div>
       </div>
 
-      <form id="backupImportForm" onsubmit="return false;">
+      <form id="backupImportForm">
         <div class="form-group" id="backupPasswordGroup">
           <label for="backupPasswordInput">Backup Master Password</label>
           <div class="input-group">
@@ -435,6 +435,25 @@
           <button type="submit" id="confirmBackupImportBtn" class="btn-primary">Import Backup</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- RESET VAULT MODAL -->
+  <div id="resetVaultModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Reset Master Vault</h3>
+        <button type="button" id="closeResetVaultModalBtn" class="icon-close-btn">&times;</button>
+      </div>
+
+      <p class="settings-desc" style="margin-bottom: 16px; color: #fca5a5;">
+        Warning: This will permanently delete your current vault file from disk. You will be able to create a brand new master password, but all existing encrypted credentials will be lost unless you have an exported backup.
+      </p>
+
+      <div class="modal-actions">
+        <button type="button" id="cancelResetVaultModalBtn" class="btn-ghost">Cancel</button>
+        <button type="button" id="confirmResetVaultModalBtn" class="btn-primary" style="background: #ef4444; border-color: #ef4444;">Permanently Reset Vault</button>
+      </div>
     </div>
   </div>
 

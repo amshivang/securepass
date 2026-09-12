@@ -177,7 +177,8 @@ async function initApp() {
   }
 }
 
-authForm.addEventListener('submit', async () => {
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
   const masterPassword = masterPasswordInput.value.trim();
   if (!masterPassword) return;
 
@@ -194,7 +195,13 @@ authForm.addEventListener('submit', async () => {
       return;
     }
 
+    authSubmitBtn.disabled = true;
+    authSubmitBtn.querySelector('span').textContent = 'Creating…';
+
     const res = await window.securePassAPI.vaultInitialize(masterPassword);
+    authSubmitBtn.disabled = false;
+    authSubmitBtn.querySelector('span').textContent = 'Create Master Vault';
+
     if (res.error) {
       showAuthError(res.error);
       return;
@@ -216,6 +223,9 @@ authForm.addEventListener('submit', async () => {
   }
 });
 
+masterPasswordInput.addEventListener('input', hideAuthError);
+confirmPasswordInput.addEventListener('input', hideAuthError);
+
 function showAuthError(msg) {
   authErrorText.textContent = msg;
   authErrorBanner.style.display = 'block';
@@ -232,11 +242,32 @@ toggleAuthEye.addEventListener('click', () => {
   authEyeClosed.style.display = isPass ? 'block' : 'none';
 });
 
-if (resetVaultBtn) {
-  resetVaultBtn.addEventListener('click', async () => {
-    const confirmed = confirm('Are you sure you want to reset your vault? This will permanently delete any existing encrypted vault file and allow you to set a brand new master password.');
-    if (!confirmed) return;
+// Reset Vault Modal Handlers
+const resetVaultModal = document.getElementById('resetVaultModal');
+const closeResetVaultModalBtn = document.getElementById('closeResetVaultModalBtn');
+const cancelResetVaultModalBtn = document.getElementById('cancelResetVaultModalBtn');
+const confirmResetVaultModalBtn = document.getElementById('confirmResetVaultModalBtn');
 
+function openResetVaultModal() {
+  if (resetVaultModal) resetVaultModal.style.display = 'flex';
+}
+
+function closeResetVaultModal() {
+  if (resetVaultModal) resetVaultModal.style.display = 'none';
+}
+
+if (resetVaultBtn) {
+  resetVaultBtn.addEventListener('click', openResetVaultModal);
+}
+if (closeResetVaultModalBtn) {
+  closeResetVaultModalBtn.addEventListener('click', closeResetVaultModal);
+}
+if (cancelResetVaultModalBtn) {
+  cancelResetVaultModalBtn.addEventListener('click', closeResetVaultModal);
+}
+if (confirmResetVaultModalBtn) {
+  confirmResetVaultModalBtn.addEventListener('click', async () => {
+    closeResetVaultModal();
     const res = await window.securePassAPI.vaultReset();
     if (res && res.error) {
       showAuthError(`Failed to reset vault: ${res.error}`);
@@ -592,7 +623,8 @@ emptyAddBtn.addEventListener('click', () => openItemModal());
 closeModalBtn.addEventListener('click', closeItemModal);
 cancelModalBtn.addEventListener('click', closeItemModal);
 
-itemForm.addEventListener('submit', async () => {
+itemForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
   const id = itemId.value;
   const payload = {
     title: itemTitle.value.trim() || 'Untitled',
