@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
+const crypto = require('crypto');
 const { CryptoVault } = require('../crypto-vault');
 
 const TEST_VAULT = path.join(__dirname, 'test_vault.enc');
@@ -13,6 +14,7 @@ function cleanup() {
   if (fs.existsSync(`${IMPORT_TEST_VAULT}.tmp`)) fs.unlinkSync(`${IMPORT_TEST_VAULT}.tmp`);
 }
 
+(async () => {
 cleanup();
 try {
   const vault = new CryptoVault(TEST_VAULT);
@@ -493,8 +495,103 @@ try {
   assert.strictEqual(saltVault.exists(), false);
   assert.strictEqual(saltVault.isUnlocked, false);
 
+  // 8. In-memory credential scrubbing on lock
+  cleanup();
+  const scrubVault = new CryptoVault(TEST_VAULT);
+  scrubVault.initialize('ScrubMasterPass!123');
+  const sensitiveItem = scrubVault.addItem({
+    title: 'Bank Account',
+    username: 'john_doe',
+    password: 'SuperSecretBankPassword#99',
+    url: 'https://bank.example.com',
+    notes: 'PIN: 9876, Security Q: Fluffy',
+    totpSecret: 'JBSWY3DPEHPK3PXP'
+  });
+
+  const retrievedItems = scrubVault.getItems();
+  const retrievedItem = retrievedItems[0];
+
+  assert.strictEqual(retrievedItem.username, 'john_doe');
+  assert.strictEqual(retrievedItem.password, 'SuperSecretBankPassword#99');
+  assert.strictEqual(retrievedItem.notes, 'PIN: 9876, Security Q: Fluffy');
+  assert.strictEqual(retrievedItem.totpSecret, 'JBSWY3DPEHPK3PXP');
+  assert.strictEqual(retrievedItems.length, 1);
+
+  // Lock vault
+  const scrubLockResult = scrubVault.lock();
+  assert.deepStrictEqual(scrubLockResult, { success: true });
+  assert.strictEqual(scrubVault.isUnlocked, false);
+  assert.strictEqual(scrubVault.derivedKey, null);
+  assert.strictEqual(scrubVault.salt, null);
+  assert.strictEqual(scrubVault.unlockedData, null);
+
+  // Item references held outside must have sensitive fields scrubbed to empty strings
+  assert.strictEqual(sensitiveItem.username, '', 'username should be scrubbed in-place on lock');
+  assert.strictEqual(sensitiveItem.password, '', 'password should be scrubbed in-place on lock');
+  assert.strictEqual(sensitiveItem.notes, '', 'notes should be scrubbed in-place on lock');
+  assert.strictEqual(sensitiveItem.totpSecret, '', 'totpSecret should be scrubbed in-place on lock');
+  assert.strictEqual(retrievedItem.username, '', 'retrievedItem username should be scrubbed in-place on lock');
+  assert.strictEqual(retrievedItem.password, '', 'retrievedItem password should be scrubbed in-place on lock');
+  assert.strictEqual(retrievedItem.notes, '', 'retrievedItem notes should be scrubbed in-place on lock');
+  assert.strictEqual(retrievedItem.totpSecret, '', 'retrievedItem totpSecret should be scrubbed in-place on lock');
+
+  // Items array reference held prior to lock should be truncated to length 0
+  assert.strictEqual(retrievedItems.length, 0, 'items array should be truncated to length 0 on lock');
+
+  // Non-sensitive fields should remain intact on the scrubbed object
+  assert.strictEqual(retrievedItem.title, 'Bank Account');
+  assert.strictEqual(retrievedItem.url, 'https://bank.example.com');
+
+  // When unlocked again with master password, persisted encrypted data is intact
+  scrubVault.unlock('ScrubMasterPass!123');
+  const freshItems = scrubVault.getItems();
+  assert.strictEqual(freshItems.length, 1);
+  assert.strictEqual(freshItems[0].username, 'john_doe');
+  assert.strictEqual(freshItems[0].password, 'SuperSecretBankPassword#99');
+  assert.strictEqual(freshItems[0].notes, 'PIN: 9876, Security Q: Fluffy');
+  assert.strictEqual(freshItems[0].totpSecret, 'JBSWY3DPEHPK3PXP');
+  scrubVault.reset();
+
+  // 9. Asynchronous PBKDF2 key derivation (_deriveKeyAsync)
+  const dummyVault = new CryptoVault(TEST_VAULT);
+  const testSalt = crypto.randomBytes(16);
+  const testPassword = 'AsyncPasswordVerification!2026';
+
+  const syncKey = dummyVault._deriveKey(testPassword, testSalt);
+  const asyncKey = await dummyVault._deriveKeyAsync(testPassword, testSalt);
+
+  assert.ok(Buffer.isBuffer(asyncKey), '_deriveKeyAsync must return a Buffer');
+  assert.strictEqual(asyncKey.length, 32, '_deriveKeyAsync must return 32 bytes (256-bit key)');
+  assert.strictEqual(
+    Buffer.compare(syncKey, asyncKey),
+    0,
+    '_deriveKeyAsync must produce the exact same key buffer as synchronous _deriveKey'
+  );
+
+  // Test with another salt and password pair to verify consistency
+  const testSalt2 = crypto.randomBytes(16);
+  const testPassword2 = 'AnotherAsyncKey@9988';
+  const syncKey2 = dummyVault._deriveKey(testPassword2, testSalt2);
+  const asyncKey2 = await dummyVault._deriveKeyAsync(testPassword2, testSalt2);
+  assert.strictEqual(
+    Buffer.compare(syncKey2, asyncKey2),
+    0,
+    '_deriveKeyAsync must consistently match _deriveKey across different credentials'
+  );
+
+  // Test error rejection on invalid password argument
+  await assert.rejects(
+    () => dummyVault._deriveKeyAsync(null, testSalt),
+    /TypeError|ERR_INVALID_ARG_TYPE/,
+    '_deriveKeyAsync should reject if masterPassword is invalid'
+  );
+
   console.log('✓ All CryptoVault tests passed.');
 } finally {
-  // 7. Cleanup: Ensure temporary test vault files are deleted before and after test execution in a finally block
+  // Cleanup: Ensure temporary test vault files are deleted before and after test execution in a finally block
   cleanup();
 }
+})().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

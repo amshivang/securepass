@@ -102,6 +102,25 @@ class CryptoVault {
   }
 
   /**
+   * Non-blocking PBKDF2 key derivation using worker thread pool
+   */
+  _deriveKeyAsync(masterPassword, salt) {
+    return new Promise((resolve, reject) => {
+      crypto.pbkdf2(
+        masterPassword,
+        salt,
+        PBKDF2_ITERATIONS,
+        KEY_LENGTH,
+        'sha256',
+        (err, derivedKey) => {
+          if (err) reject(err);
+          else resolve(derivedKey);
+        }
+      );
+    });
+  }
+
+  /**
    * Initialize a brand new vault with a master password
    */
   initialize(masterPassword) {
@@ -176,7 +195,24 @@ class CryptoVault {
       this.derivedKey.fill(0);
       this.derivedKey = null;
     }
-    this.salt = null;
+    if (this.salt) {
+      if (Buffer.isBuffer(this.salt)) {
+        this.salt.fill(0);
+      }
+      this.salt = null;
+    }
+
+    // In-place scrub sensitive plaintext fields from memory
+    if (this.unlockedData && Array.isArray(this.unlockedData.items)) {
+      for (const item of this.unlockedData.items) {
+        if (typeof item.password === 'string') item.password = '';
+        if (typeof item.username === 'string') item.username = '';
+        if (typeof item.notes === 'string') item.notes = '';
+        if (typeof item.totpSecret === 'string') item.totpSecret = '';
+      }
+      this.unlockedData.items.length = 0;
+    }
+
     this.unlockedData = null;
     this.isUnlocked = false;
     return { success: true };
