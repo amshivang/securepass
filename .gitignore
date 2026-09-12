@@ -20,10 +20,6 @@ coverage
 # Dependency directories
 node_modules/
 
-# Local desktop build folder and installers (uploaded via GitHub Releases)
-desktop/
-GitHub/
-
 # Build outputs
 dist/
 dist-unpacked/

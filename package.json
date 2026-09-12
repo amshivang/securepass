@@ -36,14 +36,13 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "SecurePass",
-      "artifactName": "SecurePass-Setup-v${version}.exe"
+      "artifactName": "SecurePass-Setup-${version}.exe"
     },
     "portable": {
-      "artifactName": "SecurePass-v${version}-Portable.exe"
+      "artifactName": "SecurePass-${version}-Portable.exe"
     },
     "files": [
       "**/*",
-      "!test-crypto.js",
       "!dist/**/*"
     ]
   }
