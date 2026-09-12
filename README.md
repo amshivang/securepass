@@ -16,8 +16,7 @@ Your master password never leaves your device. All your logins, 2FA authenticato
 
 | Download Type | File Name | Description |
 | :--- | :--- | :--- |
-| **🚀 Windows Installer (Recommended)** | `SecurePass-Setup-1.0.0.exe` | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
-| **💼 Portable Executable** | `SecurePass-1.0.0-Portable.exe` | Standalone executable. Runs instantly with zero installation, perfect for running off USB drives. |
+| **🚀 Windows Installer (Recommended)** | [**`SecurePass-Setup-1.0.0.exe`**](https://github.com/amshivang/securepass/releases/download/v1.0.0/SecurePass-Setup-1.0.0.exe) | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
 
 ---
 
