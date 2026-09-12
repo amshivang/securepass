@@ -18,5 +18,8 @@ contextBridge.exposeInMainWorld('securePassAPI', {
   vaultImportEncryptedBackup: (backupEnvelopeString, masterPassword) => ipcRenderer.invoke('vault:import-encrypted-backup', backupEnvelopeString, masterPassword),
   vaultGenerateTOTP: (secret) => ipcRenderer.invoke('vault:generate-totp', secret),
   copyToClipboard: (text, isSensitive = false) => ipcRenderer.invoke('app:copy-clipboard', text, isSensitive),
-  windowAction: (action) => ipcRenderer.send('app:window-action', action)
+  windowAction: (action) => ipcRenderer.send('app:window-action', action),
+  onVaultLocked: (callback) => {
+    ipcRenderer.on('vault:locked', (_event) => callback());
+  }
 });

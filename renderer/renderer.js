@@ -134,6 +134,15 @@ async function initApp() {
     window.addEventListener(evt, resetInactivityTimer, { passive: true });
   });
 
+  if (window.securePassAPI && window.securePassAPI.onVaultLocked) {
+    window.securePassAPI.onVaultLocked(() => {
+      if (state.items.length > 0 || !state.isSetupMode) {
+        lockVault();
+        showToast('Vault locked due to system lock/sleep.');
+      }
+    });
+  }
+
   const exists = await window.securePassAPI.vaultCheckExists();
   if (!exists) {
     state.isSetupMode = true;

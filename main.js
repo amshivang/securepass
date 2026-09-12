@@ -4,7 +4,7 @@
  * ponytail: Clean IPC routing and zero boilerplate, using native Node.js and Electron APIs.
  */
 
-const { app, BrowserWindow, ipcMain, clipboard, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, shell, powerMonitor } = require('electron');
 const path = require('path');
 const { CryptoVault, generateTOTP } = require('./crypto-vault');
 
@@ -72,6 +72,19 @@ function createWindow() {
 
 app.whenReady().then(() => {
   vault = new CryptoVault(getVaultPath());
+
+  function handleSystemLockOrSuspend() {
+    if (vault && vault.isUnlocked) {
+      vault.lock();
+    }
+    flushSensitiveClipboard();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('vault:locked');
+    }
+  }
+
+  powerMonitor.on('lock-screen', handleSystemLockOrSuspend);
+  powerMonitor.on('suspend', handleSystemLockOrSuspend);
 
   // IPC: Check if vault exists
   ipcMain.handle('vault:check-exists', async () => {
