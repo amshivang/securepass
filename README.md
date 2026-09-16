@@ -1,7 +1,7 @@
 # 🛡️ SecurePass — Zero-Knowledge Windows Password Manager & Security Analyzer
 
-[![Release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](#-downloads-release-v100)
-[![Platform](https://img.shields.io/badge/platform-Windows-0078D6.svg?logo=windows)](#-downloads-release-v100)
+[![Release](https://img.shields.io/badge/release-v1.0.1-blue.svg)](#-downloads-release-v101)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6.svg?logo=windows)](#-downloads-release-v101)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#-testing)
 [![Security](https://img.shields.io/badge/encryption-AES--256--GCM-green.svg)](#-zero-knowledge-security-architecture)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
@@ -12,11 +12,11 @@ Your master password never leaves your device. All your logins, 2FA authenticato
 
 ---
 
-## 📥 Downloads (Release v1.0.0)
+## 📥 Downloads (Release v1.0.1)
 
 | Download Type | File Name | Description |
 | :--- | :--- | :--- |
-| **🚀 Windows Installer (Recommended)** | [**`SecurePass-Setup-1.0.0.exe`**](https://github.com/amshivang/securepass/releases/download/v1.0.0/SecurePass-Setup-1.0.0.exe) | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
+| **🚀 Windows Installer (Recommended)** | [**`SecurePass-Setup-1.0.1.exe`**](https://github.com/amshivang/securepass/releases/download/v1.0.1/SecurePass-Setup-1.0.1.exe) | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
 
 ---
 

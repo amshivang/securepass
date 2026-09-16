@@ -12,30 +12,38 @@
   <!-- Top App Navigation -->
   <header class="app-header">
     <div class="logo">
-      <div class="logo-dot"></div>
+      <div class="logo-dot" aria-hidden="true"></div>
       <span class="logo-text">SecurePass</span>
       <span class="badge-tag">Desktop</span>
     </div>
 
-    <nav class="nav-tabs" id="navTabs" style="display: none;">
+    <nav class="nav-tabs" id="navTabs" style="display: none;" aria-label="Main Navigation">
       <button class="nav-tab active" data-target="vaultView">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <span>Vault</span>
       </button>
       <button class="nav-tab" data-target="analyzerView">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         <span>Analyzer</span>
       </button>
       <button class="nav-tab" data-target="settingsView">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>Settings</span>
       </button>
     </nav>
 
     <div class="header-actions">
-      <button id="lockVaultBtn" class="btn-ghost" style="display: none;" title="Lock Vault">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <!-- Clipboard sensitive indicator -->
+      <div id="clipboardStatus" class="clipboard-status" style="display: none;" title="Sensitive item in clipboard">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span id="clipboardCountdownText">30s</span>
+        <button id="clearClipboardNowBtn" class="clipboard-clear-btn" title="Clear clipboard immediately">Clear</button>
+      </div>
+
+      <button id="lockVaultBtn" class="btn-ghost" style="display: none;" title="Lock Vault (Ctrl+L)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <span>Lock</span>
+        <kbd class="kbd-hint">Ctrl+L</kbd>
       </button>
     </div>
   </header>
@@ -43,22 +51,22 @@
   <main class="app-main">
 
     <!-- 1. AUTH SCREEN (Setup / Unlock) -->
-    <section id="authView" class="view-section active">
+    <section id="authView" class="view-section active" aria-labelledby="authTitle">
       <div class="auth-container">
         <div class="auth-card">
-          <div class="auth-icon-wrap">
+          <div class="auth-icon-wrap" aria-hidden="true">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </div>
 
           <h2 id="authTitle" class="auth-title">Unlock Your Vault</h2>
-          <p id="authSubtitle" class="auth-desc">Zero-knowledge AES-256-GCM encryption. Your master password is never sent to any server.</p>
+          <p id="authSubtitle" class="auth-desc">Zero-knowledge AES-256-GCM encryption. Your master password never leaves your device.</p>
 
           <form id="authForm" class="auth-form">
             <div class="input-group">
               <input id="masterPasswordInput" type="password" class="password-input" placeholder="Enter Master Password" autocomplete="current-password" required />
               <button type="button" id="toggleAuthEye" class="toggle-btn" aria-label="Toggle password visibility">
-                <svg id="authEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg id="authEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                <svg id="authEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="authEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
               </button>
             </div>
 
@@ -66,7 +74,7 @@
               <input id="confirmPasswordInput" type="password" class="password-input" placeholder="Confirm Master Password" autocomplete="new-password" />
             </div>
 
-            <div id="authErrorBanner" class="banner alert-danger" style="display: none; margin-top: 14px;">
+            <div id="authErrorBanner" class="banner alert-danger" style="display: none; margin-top: 14px;" role="alert">
               <div class="banner-content">
                 <p id="authErrorText">Invalid master password. Please try again.</p>
               </div>
@@ -77,7 +85,7 @@
             </button>
 
             <div id="resetVaultContainer" style="margin-top: 16px; text-align: center; display: none;">
-              <button type="button" id="resetVaultBtn" style="background: none; border: none; color: #888; font-size: 13px; cursor: pointer; text-decoration: underline;">
+              <button type="button" id="resetVaultBtn" class="link-btn">
                 Forgot password? Reset Vault / Create New
               </button>
             </div>
@@ -87,26 +95,28 @@
     </section>
 
     <!-- 2. VAULT VIEW -->
-    <section id="vaultView" class="view-section" style="display: none;">
+    <section id="vaultView" class="view-section" style="display: none;" aria-label="Vault Items">
       <div class="vault-container">
         
         <!-- Vault Action Bar -->
         <div class="vault-toolbar">
           <div class="search-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="vaultSearchInput" placeholder="Search passwords, logins, notes…" autocomplete="off" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="vaultSearchInput" placeholder="Search logins, cards, secure notes… (Ctrl+F)" autocomplete="off" />
+            <button type="button" id="clearSearchBtn" class="clear-search-btn" style="display: none;" aria-label="Clear search">&times;</button>
           </div>
 
-          <div class="category-pills" id="categoryFilter">
-            <button class="pill-btn active" data-cat="All">All</button>
-            <button class="pill-btn" data-cat="Logins">Logins</button>
-            <button class="pill-btn" data-cat="Cards">Cards</button>
-            <button class="pill-btn" data-cat="Secure Notes">Notes</button>
+          <div class="category-pills" id="categoryFilter" role="tablist" aria-label="Filter items by category">
+            <button class="pill-btn active" data-cat="All" role="tab" aria-selected="true">All <span class="cat-count" id="countAll">0</span></button>
+            <button class="pill-btn" data-cat="Logins" role="tab" aria-selected="false">Logins <span class="cat-count" id="countLogins">0</span></button>
+            <button class="pill-btn" data-cat="Cards" role="tab" aria-selected="false">Cards <span class="cat-count" id="countCards">0</span></button>
+            <button class="pill-btn" data-cat="Secure Notes" role="tab" aria-selected="false">Notes <span class="cat-count" id="countNotes">0</span></button>
           </div>
 
-          <button id="addItemBtn" class="btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <button id="addItemBtn" class="btn-primary" title="Add Item (Ctrl+N)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             <span>Add Item</span>
+            <kbd class="kbd-hint">Ctrl+N</kbd>
           </button>
         </div>
 
@@ -115,9 +125,9 @@
           <!-- Populated dynamically by renderer.js -->
         </div>
 
-        <!-- Empty State -->
+        <!-- Empty State: True Empty Vault -->
         <div id="emptyVaultState" class="empty-state" style="display: none;">
-          <div class="empty-icon">
+          <div class="empty-icon" aria-hidden="true">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </div>
           <h3>Your vault is empty</h3>
@@ -125,36 +135,86 @@
           <button id="emptyAddBtn" class="btn-primary" style="margin-top: 14px;">+ Create First Item</button>
         </div>
 
+        <!-- Empty State: Search / Filter No Matches -->
+        <div id="filteredEmptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <h3 id="filterEmptyTitle">No matching items found</h3>
+          <p id="filterEmptyDesc">Try adjusting your search terms or selecting a different category.</p>
+          <button id="resetFilterBtn" class="btn-ghost" style="margin-top: 14px;">Reset Search & Filters</button>
+        </div>
+
       </div>
     </section>
 
-    <!-- 3. ANALYZER VIEW (Ported from SecurePass Web) -->
-    <section id="analyzerView" class="view-section" style="display: none;">
+    <!-- 3. ANALYZER VIEW -->
+    <section id="analyzerView" class="view-section" style="display: none;" aria-label="Password Analyzer & Generator">
       <div class="analyzer-container">
         
         <div class="hero">
-          <h1 class="hero-title">Analyze Your Password</h1>
-          <p class="hero-subtitle">Real-time entropy analysis, pattern detection, and realistic brute-force estimation.</p>
+          <h1 class="hero-title">Analyze & Generate Passwords</h1>
+          <p class="hero-subtitle">Shannon entropy scoring, offline dictionary pattern defense, and realistic brute-force cluster estimation.</p>
         </div>
 
         <div class="analyzer-card">
           <div class="input-group">
-            <input id="analyzerPasswordInput" type="password" class="password-input" placeholder="Type any password to analyze…" autocomplete="off" />
+            <input id="analyzerPasswordInput" type="password" class="password-input" placeholder="Type or generate any password to analyze…" autocomplete="off" />
             <button id="toggleAnalyzerEye" class="toggle-btn" aria-label="Toggle password visibility">
-              <svg id="analyzerEyeOpen" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <svg id="analyzerEyeClosed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              <svg id="analyzerEyeOpen" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="analyzerEyeClosed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
 
           <div class="input-toolbar">
-            <button id="analyzerGenBtn" type="button" class="generate-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-              <span>Generate strong password</span>
+            <div class="toolbar-left">
+              <button id="analyzerGenBtn" type="button" class="generate-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Generate Password</span>
+              </button>
+              <button id="analyzerToggleOptionsBtn" type="button" class="btn-ghost-sm" aria-expanded="false" aria-controls="analyzerGenOptions">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Options</span>
+              </button>
+            </div>
+            <button id="analyzerCopyBtn" type="button" class="icon-btn" aria-label="Copy to clipboard" disabled title="Copy to clipboard">
+              <svg id="analyzerCopyIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <svg id="analyzerCheckIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display:none;"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <button id="analyzerCopyBtn" type="button" class="icon-btn" aria-label="Copy to clipboard" disabled>
-              <svg id="analyzerCopyIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <svg id="analyzerCheckIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+          </div>
+
+          <!-- Configurable Generator Options Drawer -->
+          <div id="analyzerGenOptions" class="generator-options-drawer" style="display: none;">
+            <div class="gen-slider-row">
+              <div class="slider-header">
+                <label for="analyzerGenLength">Length</label>
+                <span id="analyzerGenLengthVal" class="slider-badge">20</span>
+              </div>
+              <input type="range" id="analyzerGenLength" min="8" max="64" value="20" class="slider-range" />
+            </div>
+
+            <div class="gen-checkboxes-grid">
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="analyzerOptUpper" checked />
+                <span>Uppercase (A–Z)</span>
+              </label>
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="analyzerOptLower" checked />
+                <span>Lowercase (a–z)</span>
+              </label>
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="analyzerOptDigits" checked />
+                <span>Numbers (0–9)</span>
+              </label>
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="analyzerOptSymbols" checked />
+                <span>Symbols (!@#$…)</span>
+              </label>
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="analyzerOptAvoidAmbiguous" />
+                <span>Avoid ambiguous (1, l, I, 0, O)</span>
+              </label>
+            </div>
           </div>
 
           <!-- Strength Section -->
@@ -167,7 +227,7 @@
               </span>
             </div>
             
-            <div class="strength-bar-bg">
+            <div class="strength-bar-bg" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
               <div class="strength-bar-fill" id="strengthFill"></div>
             </div>
             
@@ -177,58 +237,58 @@
                 <span class="result-value" id="statCrack">—</span>
               </div>
               <div class="result-card">
-                <span class="result-title">Score (out of 15)</span>
+                <span class="result-title">Security Score</span>
                 <span class="result-value" id="statScore">—</span>
               </div>
             </div>
           </div>
 
           <!-- Common Warning -->
-          <div class="banner alert-danger" id="commonBanner" style="display: none;">
-            <svg class="banner-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div class="banner alert-danger" id="commonBanner" style="display: none;" role="alert">
+            <svg class="banner-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div class="banner-content">
-              <h4>Common Password</h4>
-              <p>This password is commonly used and vulnerable to instant dictionary attacks.</p>
+              <h4>Common Password Pattern</h4>
+              <p>This password is on common dictionary lists and is vulnerable to instantaneous brute-force / dictionary attacks.</p>
             </div>
           </div>
 
           <!-- Advice Banner -->
-          <div class="banner" id="adviceBanner" style="display: none;">
-            <svg class="banner-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div class="banner" id="adviceBanner" style="display: none;" role="status">
+            <svg class="banner-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <div class="banner-content">
-              <h4>Improvement Plan</h4>
+              <h4>Improvement Suggestions</h4>
               <ul class="advice-list" id="adviceList"></ul>
             </div>
           </div>
 
           <!-- Secure Banner -->
-          <div class="banner alert-success" id="allGoodBanner" style="display: none;">
-            <svg class="banner-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div class="banner alert-success" id="allGoodBanner" style="display: none;" role="status">
+            <svg class="banner-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             <div class="banner-content">
-              <h4>Secure</h4>
-              <p>This password meets high-entropy security criteria.</p>
+              <h4>High-Entropy & Secure</h4>
+              <p>This password meets robust cryptographic entropy standards and provides high resilience against offline cracking.</p>
             </div>
           </div>
 
           <!-- Opt-in Breach Check -->
           <div class="breach-section">
             <button id="breachBtn" type="button" class="breach-btn" disabled>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               <span id="breachBtnText">Check known breaches (k-anonymity)</span>
             </button>
           </div>
 
-          <div class="banner alert-danger" id="breachDangerBanner" style="display: none;">
+          <div class="banner alert-danger" id="breachDangerBanner" style="display: none;" role="alert">
             <div class="banner-content">
-              <h4>Found in Data Breaches</h4>
+              <h4>Found in Known Data Breaches</h4>
               <p id="breachDangerText"></p>
             </div>
           </div>
 
-          <div class="banner alert-success" id="breachSafeBanner" style="display: none;">
+          <div class="banner alert-success" id="breachSafeBanner" style="display: none;" role="status">
             <div class="banner-content">
               <h4>Not Found in Known Breaches</h4>
-              <p>This password was not found in breach databases checked via k-anonymity lookup.</p>
+              <p>This password was not found in breach databases checked via HaveIBeenPwned k-anonymity SHA-1 prefix lookup.</p>
             </div>
           </div>
 
@@ -237,12 +297,12 @@
     </section>
 
     <!-- 4. SETTINGS VIEW -->
-    <section id="settingsView" class="view-section" style="display: none;">
+    <section id="settingsView" class="view-section" style="display: none;" aria-label="Settings & Security">
       <div class="settings-container">
         <h2>Security & Settings</h2>
         
         <div class="settings-card">
-          <h3>Encryption Details</h3>
+          <h3>Cryptographic Architecture</h3>
           <div class="meta-row">
             <span>Algorithm:</span>
             <strong>AES-256-GCM (Authenticated Encryption)</strong>
@@ -252,17 +312,21 @@
             <strong>PBKDF2-HMAC-SHA256 (100,000 rounds)</strong>
           </div>
           <div class="meta-row">
+            <span>Authentication:</span>
+            <strong>128-bit Poly1305/GCM Tag Verification</strong>
+          </div>
+          <div class="meta-row">
             <span>Zero-Knowledge:</span>
-            <strong class="text-green">Active (Keys never touch network)</strong>
+            <strong class="text-green">Active (Keys zeroed from RAM on lock)</strong>
           </div>
         </div>
 
         <div class="settings-card">
           <h3>Inactivity Auto-Lock</h3>
-          <p class="settings-desc">Automatically lock your vault when no keyboard or mouse activity is detected.</p>
+          <p class="settings-desc">Automatically locks your vault and zeros encryption keys from system memory when idle.</p>
           <div class="form-group" style="margin-top: 14px; max-width: 320px;">
             <label for="autoLockSelect">Lock after inactivity:</label>
-            <select id="autoLockSelect" class="text-input" style="background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; width: 100%; margin-top: 6px;">
+            <select id="autoLockSelect" class="select-input">
               <option value="1">1 minute</option>
               <option value="5">5 minutes</option>
               <option value="15" selected>15 minutes (Default)</option>
@@ -278,15 +342,15 @@
           <p class="settings-desc">Export your encrypted vault to keep a safe backup on an external drive or transfer to another machine.</p>
           <div class="settings-actions">
             <button id="exportEncryptedBtn" class="btn-ghost">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Export Encrypted Backup (.json)</span>
             </button>
             <button id="exportPlaintextBtn" class="btn-ghost">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Export Plaintext Backup (.json)</span>
             </button>
             <button id="importBackupBtn" class="btn-ghost">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <span>Import Vault Backup (.json)</span>
             </button>
             <input type="file" id="backupFileInput" accept=".json" style="display: none;" />
@@ -295,19 +359,37 @@
 
         <div class="settings-card">
           <h3>Change Master Password</h3>
-          <p class="settings-desc">Update your master password. All vault data will be re-encrypted using a new cryptographic salt.</p>
-          <form id="changePasswordForm" style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px; max-width: 420px;">
+          <p class="settings-desc">Update your master password. All vault credentials will be atomically re-encrypted using a fresh cryptographic salt.</p>
+          <form id="changePasswordForm" class="settings-form">
             <div class="form-group">
               <label for="currentMasterPassword">Current Master Password</label>
-              <input type="password" id="currentMasterPassword" class="input-text" placeholder="Enter current password" autocomplete="current-password" required />
+              <div class="input-group">
+                <input type="password" id="currentMasterPassword" class="password-input" placeholder="Enter current master password" autocomplete="current-password" required />
+                <button type="button" id="toggleCurrentEye" class="toggle-btn" aria-label="Toggle current password visibility">
+                  <svg id="currentEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg id="currentEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="newMasterPassword">New Master Password</label>
-              <input type="password" id="newMasterPassword" class="input-text" placeholder="At least 8 characters" autocomplete="new-password" required />
+              <div class="input-group">
+                <input type="password" id="newMasterPassword" class="password-input" placeholder="At least 8 characters" autocomplete="new-password" required />
+                <button type="button" id="toggleNewEye" class="toggle-btn" aria-label="Toggle new password visibility">
+                  <svg id="newEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg id="newEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="confirmNewMasterPassword">Confirm New Master Password</label>
-              <input type="password" id="confirmNewMasterPassword" class="input-text" placeholder="Re-enter new password" autocomplete="new-password" required />
+              <div class="input-group">
+                <input type="password" id="confirmNewMasterPassword" class="password-input" placeholder="Re-enter new password" autocomplete="new-password" required />
+                <button type="button" id="toggleConfirmEye" class="toggle-btn" aria-label="Toggle confirm password visibility">
+                  <svg id="confirmEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg id="confirmEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
             </div>
             <button type="submit" id="changeMasterPasswordBtn" class="btn-primary" style="align-self: flex-start;">
               Change Master Password
@@ -321,11 +403,11 @@
   </main>
 
   <!-- ADD / EDIT ITEM MODAL -->
-  <div id="itemModal" class="modal-backdrop" style="display: none;">
+  <div id="itemModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="modalTitle">Add New Credential</h3>
-        <button type="button" id="closeModalBtn" class="icon-close-btn">&times;</button>
+        <button type="button" id="closeModalBtn" class="icon-close-btn" aria-label="Close modal">&times;</button>
       </div>
 
       <form id="itemForm">
@@ -345,36 +427,70 @@
           <input id="itemTitle" type="text" class="text-input" placeholder="e.g. Google, GitHub, Personal Bank" required />
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="itemUsernameGroup">
           <label for="itemUsername">Username / Email</label>
           <input id="itemUsername" type="text" class="text-input" placeholder="e.g. user@example.com" />
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="itemPasswordGroup">
           <label for="itemPassword">Password</label>
           <div class="input-group">
             <input id="itemPassword" type="password" class="password-input" placeholder="Enter password…" />
-            <button type="button" id="toggleModalPasswordEye" class="toggle-btn">
-              <svg id="modalEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <svg id="modalEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            <button type="button" id="toggleModalPasswordEye" class="toggle-btn" aria-label="Toggle password visibility">
+              <svg id="modalEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="modalEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
           
           <div class="modal-password-toolbar">
-            <button type="button" id="modalGenPasswordBtn" class="generate-btn">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-              <span>Generate Password</span>
-            </button>
+            <div class="toolbar-left">
+              <button type="button" id="modalGenPasswordBtn" class="generate-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Generate Password</span>
+              </button>
+              <button type="button" id="modalGenOptionsToggle" class="btn-ghost-sm" aria-expanded="false" aria-controls="modalGenOptionsDrawer">
+                <span>Options</span>
+              </button>
+            </div>
             <div id="modalStrengthMeter" class="modal-strength-pill">Strength: —</div>
+          </div>
+
+          <!-- In-modal Generator Options -->
+          <div id="modalGenOptionsDrawer" class="generator-options-drawer compact" style="display: none;">
+            <div class="gen-slider-row">
+              <div class="slider-header">
+                <label for="modalGenLength">Length</label>
+                <span id="modalGenLengthVal" class="slider-badge">20</span>
+              </div>
+              <input type="range" id="modalGenLength" min="8" max="64" value="20" class="slider-range" />
+            </div>
+            <div class="gen-checkboxes-grid">
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="modalOptUpper" checked />
+                <span>Uppercase (A–Z)</span>
+              </label>
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="modalOptLower" checked />
+                <span>Lowercase (a–z)</span>
+              </label>
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="modalOptDigits" checked />
+                <span>Numbers (0–9)</span>
+              </label>
+              <label class="gen-checkbox-label">
+                <input type="checkbox" id="modalOptSymbols" checked />
+                <span>Symbols (!@#$…)</span>
+              </label>
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="itemUrlGroup">
           <label for="itemUrl">Website URL</label>
           <input id="itemUrl" type="url" class="text-input" placeholder="https://example.com/login" />
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="itemTotpGroup">
           <label for="itemTotp">2FA / Authenticator Secret (Optional Base32)</label>
           <input type="text" id="itemTotp" class="text-input" placeholder="e.g. JBSWY3DPEHPK3PXP" autocomplete="off" />
         </div>
@@ -392,19 +508,143 @@
     </div>
   </div>
 
+  <!-- ITEM DETAIL / VIEW MODAL -->
+  <div id="itemDetailModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="detailItemTitle">
+    <div class="modal-card modal-card-wide">
+      <div class="modal-header">
+        <div class="detail-header-info">
+          <div id="detailCategoryIcon" class="card-icon"></div>
+          <div>
+            <h3 id="detailItemTitle" class="detail-title">Item Title</h3>
+            <span id="detailItemCategory" class="detail-cat-badge">Login</span>
+          </div>
+        </div>
+        <button type="button" id="closeDetailModalBtn" class="icon-close-btn" aria-label="Close details">&times;</button>
+      </div>
+
+      <div class="detail-body">
+        <!-- Username row -->
+        <div id="detailUsernameRow" class="detail-field-box">
+          <div class="detail-field-meta">
+            <span class="detail-field-label">Username / Email</span>
+            <span id="detailUsernameVal" class="detail-field-value">user@example.com</span>
+          </div>
+          <button type="button" id="detailCopyUserBtn" class="btn-card-action" title="Copy Username">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+
+        <!-- Password row -->
+        <div id="detailPasswordRow" class="detail-field-box">
+          <div class="detail-field-meta">
+            <span class="detail-field-label">Password</span>
+            <span id="detailPasswordVal" class="detail-field-value font-mono">••••••••••••</span>
+          </div>
+          <div class="detail-field-actions">
+            <button type="button" id="detailToggleEyeBtn" class="btn-card-action" title="Reveal / Conceal">
+              <span id="detailEyeText">Show</span>
+            </button>
+            <button type="button" id="detailCopyPassBtn" class="btn-card-action" title="Copy Password (Auto-clears)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Website row -->
+        <div id="detailWebsiteRow" class="detail-field-box" style="display: none;">
+          <div class="detail-field-meta">
+            <span class="detail-field-label">Website URL</span>
+            <a id="detailWebsiteLink" href="#" target="_blank" class="detail-link" rel="noopener noreferrer">https://example.com</a>
+          </div>
+          <div class="detail-field-actions">
+            <button type="button" id="detailOpenWebsiteBtn" class="btn-card-action" title="Open in default browser">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <span>Open</span>
+            </button>
+            <button type="button" id="detailCopyWebsiteBtn" class="btn-card-action" title="Copy URL">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TOTP row -->
+        <div id="detailTotpRow" class="detail-totp-box" style="display: none;">
+          <div class="totp-left">
+            <span class="totp-badge">2FA</span>
+            <span id="detailTotpCode" class="totp-digits">------</span>
+            <span id="detailTotpCountdown" class="totp-countdown">--s</span>
+          </div>
+          <button type="button" id="detailCopyTotpBtn" class="btn-card-action" title="Copy 2FA Code">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy Code</span>
+          </button>
+        </div>
+
+        <!-- Secure Notes section -->
+        <div id="detailNotesRow" class="detail-notes-section" style="display: none;">
+          <div class="detail-notes-header">
+            <span class="detail-field-label">Secure Notes</span>
+            <button type="button" id="detailCopyNotesBtn" class="btn-card-action btn-compact" title="Copy Notes">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy Notes</span>
+            </button>
+          </div>
+          <pre id="detailNotesVal" class="detail-notes-box"></pre>
+        </div>
+      </div>
+
+      <div class="modal-actions detail-actions">
+        <button type="button" id="detailDeleteBtn" class="btn-danger-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>Delete Item</span>
+        </button>
+        <div class="right-actions">
+          <button type="button" id="detailEditBtn" class="btn-ghost">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span>Edit</span>
+          </button>
+          <button type="button" id="detailCloseBtn" class="btn-primary">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div id="deleteConfirmModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <h3 id="deleteModalTitle">Delete Credential</h3>
+        <button type="button" id="closeDeleteModalBtn" class="icon-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="delete-confirm-body">
+        <p>Are you sure you want to permanently delete <strong id="deleteTargetTitle">this item</strong> from your encrypted vault?</p>
+        <p class="delete-warning-text">This action is irreversible and the credential cannot be recovered.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="cancelDeleteBtn" class="btn-ghost">Cancel</button>
+        <button type="button" id="confirmDeleteBtn" class="btn-primary btn-danger">Permanently Delete</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BACKUP IMPORT MODAL -->
-  <div id="backupImportModal" class="modal-backdrop" style="display: none;">
+  <div id="backupImportModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="backupImportTitle">
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="backupImportTitle">Import Backup</h3>
-        <button type="button" id="closeBackupImportModalBtn" class="icon-close-btn">&times;</button>
+        <button type="button" id="closeBackupImportModalBtn" class="icon-close-btn" aria-label="Close modal">&times;</button>
       </div>
 
       <p id="backupImportDesc" class="settings-desc" style="margin-bottom: 16px;">
         Choose how to import items from your backup file into your vault.
       </p>
 
-      <div id="backupImportErrorBanner" class="banner alert-danger" style="display: none; margin-bottom: 14px; margin-top: 0;">
+      <div id="backupImportErrorBanner" class="banner alert-danger" style="display: none; margin-bottom: 14px; margin-top: 0;" role="alert">
         <div class="banner-content">
           <p id="backupImportErrorText" style="font-size: 0.85rem;"></p>
         </div>
@@ -416,8 +656,8 @@
           <div class="input-group">
             <input id="backupPasswordInput" type="password" class="password-input" placeholder="Enter password used to encrypt backup…" autocomplete="off" />
             <button type="button" id="toggleBackupPasswordEye" class="toggle-btn" aria-label="Toggle password visibility">
-              <svg id="backupEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <svg id="backupEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              <svg id="backupEyeOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="backupEyeClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
         </div>
@@ -439,11 +679,11 @@
   </div>
 
   <!-- RESET VAULT MODAL -->
-  <div id="resetVaultModal" class="modal-backdrop" style="display: none;">
+  <div id="resetVaultModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Reset Master Vault</h3>
-        <button type="button" id="closeResetVaultModalBtn" class="icon-close-btn">&times;</button>
+        <h3 id="resetModalTitle">Reset Master Vault</h3>
+        <button type="button" id="closeResetVaultModalBtn" class="icon-close-btn" aria-label="Close modal">&times;</button>
       </div>
 
       <p class="settings-desc" style="margin-bottom: 16px; color: #fca5a5;">
@@ -452,13 +692,13 @@
 
       <div class="modal-actions">
         <button type="button" id="cancelResetVaultModalBtn" class="btn-ghost">Cancel</button>
-        <button type="button" id="confirmResetVaultModalBtn" class="btn-primary" style="background: #ef4444; border-color: #ef4444;">Permanently Reset Vault</button>
+        <button type="button" id="confirmResetVaultModalBtn" class="btn-primary btn-danger">Permanently Reset Vault</button>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div id="appToast" class="toast" style="display: none;"></div>
+  <div id="appToast" class="toast" style="display: none;" role="status" aria-live="polite"></div>
 
   <script src="analyzer-engine.js"></script>
   <script src="renderer.js"></script>
