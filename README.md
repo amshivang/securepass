@@ -153,3 +153,13 @@ SecurePass is licensed under the MIT License. See [LICENSE](LICENSE).
 
 - [Bitwarden](https://github.com/bitwarden/clients) for client-side vault architecture inspiration.
 - [Have I Been Pwned](https://haveibeenpwned.com/) for the k-anonymity breach lookup API.
+
+
+---
+<div align="center">
+  <a href="https://www.buymeacoffee.com/amshivang">
+    <img src="https://raw.githubusercontent.com/amshivang/amshivang/main/qr-code.png" alt="Buy Me A Coffee" width="250">
+  </a>
+  <br>
+  <strong><a href="https://www.buymeacoffee.com/amshivang">Support my work on Buy Me A Coffee! ☕</a></strong>
+</div>
