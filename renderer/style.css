@@ -1152,6 +1152,10 @@ body.app-body {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 16px;
+  box-sizing: border-box;
   z-index: 1000;
   animation: fadeIn 0.2s ease;
 }
@@ -1159,18 +1163,36 @@ body.app-body {
 .modal-card {
   width: 100%;
   max-width: 480px;
+  max-height: min(92vh, calc(100vh - 40px));
   background: #141414;
   border: 1px solid var(--border-hover);
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  margin: auto;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  position: sticky;
+  top: -24px;
+  background: #141414;
+  padding-top: 24px;
+  margin-top: -24px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -1222,6 +1244,7 @@ body.app-body {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+  flex-shrink: 0;
 }
 
 /* Modal Variants */
@@ -1231,6 +1254,66 @@ body.app-body {
 
 .modal-card-sm {
   max-width: 420px;
+}
+
+/* Responsive Modal Scaling for Small / Resized Windows */
+@media (max-height: 720px) {
+  .modal-backdrop {
+    padding: 14px 10px;
+  }
+
+  .modal-card {
+    max-height: calc(100vh - 28px);
+    padding: 18px 20px;
+  }
+
+  .modal-header {
+    top: -18px;
+    padding-top: 18px;
+    margin-top: -18px;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+  }
+
+  .modal-actions {
+    margin-top: 14px;
+  }
+}
+
+@media (max-height: 560px) {
+  .modal-backdrop {
+    padding: 8px 6px;
+  }
+
+  .modal-card {
+    max-height: calc(100vh - 16px);
+    padding: 14px 16px;
+  }
+
+  .modal-header {
+    top: -14px;
+    padding-top: 14px;
+    margin-top: -14px;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  .form-group {
+    margin-bottom: 8px;
+  }
+
+  .form-group label {
+    font-size: 0.75rem;
+    margin-bottom: 3px;
+  }
+
+  .modal-actions {
+    margin-top: 10px;
+  }
 }
 
 /* Item Detail Modal Specifics */
@@ -1480,4 +1563,40 @@ body.app-body {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.modal-card::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
