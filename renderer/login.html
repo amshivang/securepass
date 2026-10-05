@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+  <title>SecurePass — Open &amp; Fill</title>
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+  <header>
+    <div class="top-row">
+      <strong id="loginTitle">SecurePass — Open &amp; Fill</strong>
+      <div class="actions">
+        <button id="reloadPage">Reload</button>
+        <button id="openExternal">Open in Browser</button>
+        <button id="fillPage" class="primary" disabled>Fill Again</button>
+      </div>
+    </div>
+    <div id="loginUrl" class="url" aria-label="Current website"></div>
+    <p id="loginStatus" role="status" aria-live="polite">Loading…</p>
+  </header>
+  <script src="login.js"></script>
+</body>
+</html>

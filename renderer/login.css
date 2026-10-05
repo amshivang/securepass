@@ -1,0 +1,13 @@
+:root { color-scheme: dark; font-family: system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #0a0a0a; color: #ededed; }
+header { height: 116px; padding: 12px 20px; border-bottom: 1px solid #333; }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.actions { display: flex; gap: 8px; flex-shrink: 0; }
+button { border: 1px solid #444; border-radius: 6px; padding: 7px 12px; background: #171717; color: #ededed; cursor: pointer; }
+button.primary { background: #2563eb; border-color: #2563eb; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
+.url { font-family: monospace; font-size: 12px; margin-top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #60a5fa; }
+p { font-size: 12px; margin: 8px 0 0; color: #a3a3a3; }

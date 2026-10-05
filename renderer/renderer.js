@@ -65,6 +65,10 @@ const countAll = document.getElementById('countAll');
 const countLogins = document.getElementById('countLogins');
 const countCards = document.getElementById('countCards');
 const countNotes = document.getElementById('countNotes');
+const countFavorites = document.getElementById('countFavorites');
+const dashboardTotal = document.getElementById('dashboardTotal');
+const dashboardWeak = document.getElementById('dashboardWeak');
+const dashboardReused = document.getElementById('dashboardReused');
 
 // Add / Edit Modal DOM
 const itemModal = document.getElementById('itemModal');
@@ -78,6 +82,8 @@ const itemPassword = document.getElementById('itemPassword');
 const itemUrl = document.getElementById('itemUrl');
 const itemTotp = document.getElementById('itemTotp');
 const itemNotes = document.getElementById('itemNotes');
+const customFieldsContainer = document.getElementById('customFieldsContainer');
+const addCustomFieldBtn = document.getElementById('addCustomFieldBtn');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const cancelModalBtn = document.getElementById('cancelModalBtn');
 const modalGenPasswordBtn = document.getElementById('modalGenPasswordBtn');
@@ -111,6 +117,7 @@ const detailCopyPassBtn = document.getElementById('detailCopyPassBtn');
 const detailWebsiteRow = document.getElementById('detailWebsiteRow');
 const detailWebsiteLink = document.getElementById('detailWebsiteLink');
 const detailOpenWebsiteBtn = document.getElementById('detailOpenWebsiteBtn');
+const detailAutofillBtn = document.getElementById('detailAutofillBtn');
 const detailCopyWebsiteBtn = document.getElementById('detailCopyWebsiteBtn');
 const detailTotpRow = document.getElementById('detailTotpRow');
 const detailTotpCode = document.getElementById('detailTotpCode');
@@ -253,7 +260,7 @@ function updateClipboardCountdownDisplay() {
 
 if (clearClipboardNowBtn) {
   clearClipboardNowBtn.addEventListener('click', async () => {
-    await window.securePassAPI.copyToClipboard('', true);
+    await window.securePassAPI.clearSensitiveClipboard();
     state.clipboardExpiresAt = 0;
     if (clipboardStatus) clipboardStatus.style.display = 'none';
     if (state.clipboardCountdownTimer) {
@@ -268,11 +275,8 @@ if (clearClipboardNowBtn) {
 // 1. INITIALIZATION & AUTH
 // -------------------------------------------------------------
 async function initApp() {
-  const savedAutoLock = localStorage.getItem('securepass_autolock_minutes');
-  state.autoLockMinutes = savedAutoLock !== null ? parseInt(savedAutoLock, 10) : 15;
-  if (isNaN(state.autoLockMinutes)) {
-    state.autoLockMinutes = 15;
-  }
+  const autoLock = await window.securePassAPI.getAutoLock();
+  state.autoLockMinutes = [0, 1, 5, 15, 30, 60].includes(autoLock.minutes) ? autoLock.minutes : 15;
   if (autoLockSelect) {
     autoLockSelect.value = String(state.autoLockMinutes);
   }
@@ -283,10 +287,10 @@ async function initApp() {
   });
 
   if (window.securePassAPI && window.securePassAPI.onVaultLocked) {
-    window.securePassAPI.onVaultLocked(() => {
+    window.securePassAPI.onVaultLocked(reason => {
       if (state.items.length > 0 || !state.isSetupMode) {
         lockVault();
-        showToast('Vault locked due to system lock/sleep.');
+        showToast(reason === 'inactivity' ? 'Vault locked due to inactivity.' : 'Vault locked due to system lock/sleep.');
       }
     });
   }
@@ -311,13 +315,14 @@ async function initApp() {
 
 authForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const masterPassword = masterPasswordInput.value.trim();
+  // Whitespace is valid password material and must not be silently removed.
+  const masterPassword = masterPasswordInput.value;
   if (!masterPassword) return;
 
   hideAuthError();
 
   if (state.isSetupMode) {
-    const confirm = confirmPasswordInput.value.trim();
+    const confirm = confirmPasswordInput.value;
     if (masterPassword.length < 8) {
       showAuthError('Master password must be at least 8 characters.');
       return;
@@ -447,6 +452,13 @@ async function lockVault() {
   analyzerView.style.display = 'none';
   settingsView.style.display = 'none';
   authView.style.display = 'flex';
+  masterPasswordInput.value = '';
+  confirmPasswordInput.value = '';
+  if (analyzerPasswordInput) {
+    analyzerPasswordInput.value = '';
+    analyzePassword('');
+  }
+  if (changePasswordForm) changePasswordForm.reset();
   state.isSetupMode = false;
   authTitle.textContent = 'Unlock Your Vault';
   confirmPasswordGroup.style.display = 'none';
@@ -558,17 +570,32 @@ function updateCategoryCounts() {
   const logins = state.items.filter(i => i.category === 'Logins').length;
   const cards = state.items.filter(i => i.category === 'Cards').length;
   const notes = state.items.filter(i => i.category === 'Secure Notes').length;
+  const favorites = state.items.filter(i => i.favorite).length;
 
   if (countAll) countAll.textContent = total;
   if (countLogins) countLogins.textContent = logins;
   if (countCards) countCards.textContent = cards;
   if (countNotes) countNotes.textContent = notes;
+  if (countFavorites) countFavorites.textContent = favorites;
+  updateSecurityDashboard();
+}
+
+function updateSecurityDashboard() {
+  const credentials = state.items.filter(item => item.category !== 'Secure Notes' && item.password);
+  const weak = credentials.filter(item => evaluatePasswordScore(item.password) < 9).length;
+  const counts = new Map();
+  for (const item of credentials) counts.set(item.password, (counts.get(item.password) || 0) + 1);
+  const reused = credentials.filter(item => counts.get(item.password) > 1).length;
+  if (dashboardTotal) dashboardTotal.textContent = state.items.length;
+  if (dashboardWeak) dashboardWeak.textContent = weak;
+  if (dashboardReused) dashboardReused.textContent = reused;
 }
 
 function renderVaultItems() {
   const query = state.searchQuery.toLowerCase().trim();
   const filtered = state.items.filter(item => {
-    const matchesCategory = state.activeCategory === 'All' || item.category === state.activeCategory;
+    const matchesCategory = state.activeCategory === 'All' ||
+      (state.activeCategory === 'Favorites' ? item.favorite : item.category === state.activeCategory);
     const matchesSearch = !query || 
       (item.title && item.title.toLowerCase().includes(query)) ||
       (item.username && item.username.toLowerCase().includes(query)) ||
@@ -673,7 +700,10 @@ function renderVaultItems() {
             <div class="card-category">${escapeHtml(item.category)}</div>
           </div>
         </div>
-        <button type="button" class="card-menu-btn delete-item-btn" data-id="${item.id}" title="Delete Item" aria-label="Delete ${escapeHtml(item.title)}">
+         <button type="button" class="card-menu-btn favorite-item-btn ${item.favorite ? 'is-favorite' : ''}" data-id="${item.id}" title="${item.favorite ? 'Remove from favorites' : 'Add to favorites'}" aria-label="${item.favorite ? 'Remove' : 'Add'} ${escapeHtml(item.title)} ${item.favorite ? 'from' : 'to'} favorites" aria-pressed="${item.favorite}">
+           <svg width="15" height="15" viewBox="0 0 24 24" fill="${item.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+         </button>
+         <button type="button" class="card-menu-btn delete-item-btn" data-id="${item.id}" title="Delete Item" aria-label="Delete ${escapeHtml(item.title)}">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </button>
       </div>
@@ -904,6 +934,22 @@ itemsList.addEventListener('click', async (e) => {
     return;
   }
 
+  const favoriteBtn = e.target.closest('.favorite-item-btn');
+  if (favoriteBtn) {
+    e.stopPropagation();
+    const id = favoriteBtn.dataset.id;
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    const result = await window.securePassAPI.vaultUpdateItem(id, { favorite: !item.favorite });
+    if (result && result.error) {
+      showToast(`Favorite update failed: ${result.error}`);
+      return;
+    }
+    await refreshVaultItems();
+    showToast(item.favorite ? 'Removed from favorites.' : 'Added to favorites.');
+    return;
+  }
+
   const deleteBtn = e.target.closest('.delete-item-btn');
   if (deleteBtn) {
     e.stopPropagation();
@@ -953,10 +999,15 @@ function openItemDetailModal(item) {
   // Website
   if (item.url) {
     detailWebsiteRow.style.display = 'flex';
-    detailWebsiteLink.href = item.url;
+    const safeUrl = getSafeExternalUrl(item.url);
+    detailWebsiteLink.href = safeUrl || '#';
     detailWebsiteLink.textContent = item.url;
+    if (detailOpenWebsiteBtn) detailOpenWebsiteBtn.disabled = !safeUrl;
+    if (detailAutofillBtn) detailAutofillBtn.disabled = !getSafeAutofillUrl(item.url) || item.category !== 'Logins';
   } else {
     detailWebsiteRow.style.display = 'none';
+    if (detailOpenWebsiteBtn) detailOpenWebsiteBtn.disabled = true;
+    if (detailAutofillBtn) detailAutofillBtn.disabled = true;
   }
 
   // TOTP
@@ -980,6 +1031,14 @@ function openItemDetailModal(item) {
 
 function closeItemDetailModal() {
   if (itemDetailModal) itemDetailModal.style.display = 'none';
+  if (detailPasswordVal) detailPasswordVal.textContent = '••••••••••••';
+  if (detailUsernameVal) detailUsernameVal.textContent = '';
+  if (detailNotesVal) detailNotesVal.textContent = '';
+  if (detailTotpCode) detailTotpCode.textContent = '------';
+  if (detailWebsiteLink) {
+    detailWebsiteLink.href = '#';
+    detailWebsiteLink.textContent = '';
+  }
   state.activeDetailItem = null;
   state.activeDetailPasswordRevealed = false;
 }
@@ -1022,8 +1081,21 @@ if (detailCopyPassBtn) {
 if (detailOpenWebsiteBtn) {
   detailOpenWebsiteBtn.addEventListener('click', () => {
     if (state.activeDetailItem && state.activeDetailItem.url) {
-      window.open(state.activeDetailItem.url, '_blank');
+      const safeUrl = getSafeExternalUrl(state.activeDetailItem.url);
+      if (safeUrl) window.open(safeUrl, '_blank');
     }
+  });
+}
+
+if (detailAutofillBtn) {
+  detailAutofillBtn.addEventListener('click', async () => {
+    if (!state.activeDetailItem || !getSafeAutofillUrl(state.activeDetailItem.url)) return;
+    const result = await window.securePassAPI.openLoginAndFill(state.activeDetailItem.id);
+    if (result && result.error) {
+      showToast(`Open & Fill failed: ${result.error}`);
+      return;
+    }
+    showToast('Login window opened. Its toolbar will show the fill result.');
   });
 }
 
@@ -1120,12 +1192,14 @@ function openItemModal(item = null) {
     itemUrl.value = item.url || '';
     itemTotp.value = item.totpSecret || '';
     itemNotes.value = item.notes || '';
+    renderCustomFields(item.customFields || []);
     updateModalStrength(item.password);
   } else {
     modalTitle.textContent = 'Add New Credential';
     itemForm.reset();
     itemId.value = '';
     itemTotp.value = '';
+    renderCustomFields([]);
     itemCategory.value = state.activeCategory !== 'All' ? state.activeCategory : 'Logins';
     modalStrengthMeter.textContent = 'Strength: —';
     modalStrengthMeter.style.color = 'var(--text-dim)';
@@ -1134,8 +1208,39 @@ function openItemModal(item = null) {
   itemTitle.focus();
 }
 
+function renderCustomFields(fields) {
+  if (!customFieldsContainer) return;
+  customFieldsContainer.innerHTML = '';
+  fields.forEach(field => addCustomFieldRow(field.name, field.value));
+}
+
+function addCustomFieldRow(name = '', value = '') {
+  if (!customFieldsContainer || customFieldsContainer.children.length >= 20) {
+    showToast('You can add up to 20 custom fields.');
+    return;
+  }
+
+  const row = document.createElement('div');
+  row.className = 'custom-field-row';
+  row.innerHTML = `
+    <input type="text" class="text-input custom-field-name" placeholder="Field name or ID" maxlength="200" value="${escapeHtml(name)}" aria-label="Custom field name" />
+    <input type="text" class="text-input custom-field-value" placeholder="Value" maxlength="4096" value="${escapeHtml(value)}" aria-label="Custom field value" />
+    <button type="button" class="btn-ghost-sm custom-field-remove" aria-label="Remove custom field">×</button>
+  `;
+  row.querySelector('.custom-field-remove').addEventListener('click', () => row.remove());
+  customFieldsContainer.appendChild(row);
+}
+
+if (addCustomFieldBtn) addCustomFieldBtn.addEventListener('click', () => addCustomFieldRow());
+
 function closeItemModal() {
   itemModal.style.display = 'none';
+  itemForm.reset();
+  itemId.value = '';
+  itemPassword.type = 'password';
+  if (modalEyeOpen) modalEyeOpen.style.display = 'block';
+  if (modalEyeClosed) modalEyeClosed.style.display = 'none';
+  renderCustomFields([]);
 }
 
 addItemBtn.addEventListener('click', () => openItemModal());
@@ -1153,14 +1258,32 @@ itemForm.addEventListener('submit', async (e) => {
     password: itemPassword.value,
     url: itemUrl.value.trim(),
     totpSecret: itemTotp.value.trim(),
-    notes: itemNotes.value.trim()
+    notes: itemNotes.value.trim(),
+    customFields: Array.from(customFieldsContainer ? customFieldsContainer.querySelectorAll('.custom-field-row') : [])
+      .map(row => ({
+        name: row.querySelector('.custom-field-name').value.trim(),
+        value: row.querySelector('.custom-field-value').value
+      }))
   };
 
+  if (payload.customFields.some(field => !field.name)) {
+    showToast('Every custom field needs a name or ID.');
+    return;
+  }
+
   if (id) {
-    await window.securePassAPI.vaultUpdateItem(id, payload);
+    const res = await window.securePassAPI.vaultUpdateItem(id, payload);
+    if (res && res.error) {
+      showToast(`Save failed: ${res.error}`);
+      return;
+    }
     showToast('Item updated in vault.');
   } else {
-    await window.securePassAPI.vaultAddItem(payload);
+    const res = await window.securePassAPI.vaultAddItem(payload);
+    if (res && res.error) {
+      showToast(`Save failed: ${res.error}`);
+      return;
+    }
     showToast('New item encrypted & saved.');
   }
 
@@ -1252,25 +1375,31 @@ function generateConfigurablePassword({
     digitChars = digitChars.replace(/[01]/g, '');
   }
 
-  let charset = '';
-  if (upper) charset += upperChars;
-  if (lower) charset += lowerChars;
-  if (digits) charset += digitChars;
-  if (symbols) charset += symbolChars;
+  const pools = [];
+  if (upper) pools.push(upperChars);
+  if (lower) pools.push(lowerChars);
+  if (digits) pools.push(digitChars);
+  if (symbols) pools.push(symbolChars);
+  if (pools.length === 0) pools.push(lowerChars, digitChars);
 
-  if (!charset) {
-    charset = lowerChars + digitChars;
+  const charset = pools.join('');
+  const safeLength = Math.max(8, Math.min(64, Number.isFinite(length) ? Math.floor(length) : 20));
+  const randomIndex = maxExclusive => {
+    const limit = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+    const value = new Uint32Array(1);
+    do {
+      window.crypto.getRandomValues(value);
+    } while (value[0] >= limit);
+    return value[0] % maxExclusive;
+  };
+
+  const resultChars = pools.slice(0, safeLength).map(pool => pool[randomIndex(pool.length)]);
+  while (resultChars.length < safeLength) resultChars.push(charset[randomIndex(charset.length)]);
+  for (let i = resultChars.length - 1; i > 0; i--) {
+    const j = randomIndex(i + 1);
+    [resultChars[i], resultChars[j]] = [resultChars[j], resultChars[i]];
   }
-
-  const safeLength = Math.max(8, Math.min(64, length));
-  const array = new Uint32Array(safeLength);
-  window.crypto.getRandomValues(array);
-
-  let result = '';
-  for (let i = 0; i < safeLength; i++) {
-    result += charset[array[i] % charset.length];
-  }
-  return result;
+  return resultChars.join('');
 }
 
 if (analyzerToggleOptionsBtn) {
@@ -1412,7 +1541,18 @@ breachBtn.addEventListener('click', async () => {
     const prefix = hashHex.substring(0, 5);
     const suffix = hashHex.substring(5);
 
-    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    let response;
+    try {
+      response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+        signal: controller.signal,
+        headers: { 'Add-Padding': 'true' }
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (!response.ok) throw new Error(`Breach service returned HTTP ${response.status}.`);
     const text = await response.text();
 
     const lines = text.split('\n');
@@ -1443,10 +1583,11 @@ breachBtn.addEventListener('click', async () => {
 // 8. SETTINGS & BACKUPS
 // -------------------------------------------------------------
 if (autoLockSelect) {
-  autoLockSelect.addEventListener('change', () => {
+  autoLockSelect.addEventListener('change', async () => {
     const mins = parseInt(autoLockSelect.value, 10);
     state.autoLockMinutes = isNaN(mins) ? 15 : mins;
-    localStorage.setItem('securepass_autolock_minutes', state.autoLockMinutes);
+    const result = await window.securePassAPI.setAutoLock(state.autoLockMinutes);
+    if (result.error) { showToast(result.error); return; }
     resetInactivityTimer();
     showToast(state.autoLockMinutes === 0 ? 'Auto-lock disabled.' : `Auto-lock set to ${state.autoLockMinutes} minute${state.autoLockMinutes > 1 ? 's' : ''}.`);
   });
@@ -1666,14 +1807,28 @@ if (changePasswordForm) {
 
 // Helper: Escape HTML
 function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;')
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
 }
 
+function getSafeExternalUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function getSafeAutofillUrl(value) {
+  const url = getSafeExternalUrl(value);
+  return url && new URL(url).protocol === 'https:' ? url : null;
+}
+
 // Start application
 initApp();
-

@@ -144,6 +144,74 @@ body.app-body {
   gap: 10px;
 }
 
+.custom-fields-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.custom-fields-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.custom-field-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.custom-field-remove {
+  min-width: 34px;
+  padding: 8px;
+}
+
+.field-hint {
+  margin-top: 8px;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.btn-autofill {
+  color: var(--accent);
+}
+
+.btn-card-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.security-dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.security-dashboard > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.security-dashboard strong { font-size: 1.35rem; }
+.security-dashboard span { color: var(--text-dim); font-size: .75rem; }
+
+@media (max-width: 700px) {
+  .custom-field-row {
+    grid-template-columns: 1fr 1fr auto;
+  }
+}
+
 .kbd-hint {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.65rem;

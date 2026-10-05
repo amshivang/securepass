@@ -111,6 +111,7 @@
             <button class="pill-btn" data-cat="Logins" role="tab" aria-selected="false">Logins <span class="cat-count" id="countLogins">0</span></button>
             <button class="pill-btn" data-cat="Cards" role="tab" aria-selected="false">Cards <span class="cat-count" id="countCards">0</span></button>
             <button class="pill-btn" data-cat="Secure Notes" role="tab" aria-selected="false">Notes <span class="cat-count" id="countNotes">0</span></button>
+            <button class="pill-btn" data-cat="Favorites" role="tab" aria-selected="false">Favorites <span class="cat-count" id="countFavorites">0</span></button>
           </div>
 
           <button id="addItemBtn" class="btn-primary" title="Add Item (Ctrl+N)">
@@ -309,15 +310,25 @@
           </div>
           <div class="meta-row">
             <span>Key Derivation:</span>
-            <strong>PBKDF2-HMAC-SHA256 (100,000 rounds)</strong>
+            <strong>PBKDF2-HMAC-SHA256 (600,000 rounds for new vaults)</strong>
           </div>
           <div class="meta-row">
             <span>Authentication:</span>
-            <strong>128-bit Poly1305/GCM Tag Verification</strong>
+            <strong>128-bit GCM Authentication Tag Verification</strong>
           </div>
           <div class="meta-row">
             <span>Zero-Knowledge:</span>
             <strong class="text-green">Active (Keys zeroed from RAM on lock)</strong>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Local Security Dashboard</h3>
+          <p class="settings-desc">Computed locally from your unlocked vault. Passwords never leave this device for these checks.</p>
+          <div class="security-dashboard" aria-live="polite">
+            <div><strong id="dashboardTotal">0</strong><span>Credentials</span></div>
+            <div><strong id="dashboardWeak">0</strong><span>Weak passwords</span></div>
+            <div><strong id="dashboardReused">0</strong><span>Reused passwords</span></div>
           </div>
         </div>
 
@@ -496,6 +507,15 @@
         </div>
 
         <div class="form-group">
+          <div class="custom-fields-header">
+            <label>Custom Fields</label>
+            <button type="button" id="addCustomFieldBtn" class="btn-ghost-sm">+ Add field</button>
+          </div>
+          <div id="customFieldsContainer" class="custom-fields-container" aria-live="polite"></div>
+          <p class="field-hint">Optional fields such as account ID, PIN, or organization. Open &amp; Fill matches these by label when possible.</p>
+        </div>
+
+        <div class="form-group">
           <label for="itemNotes">Secure Notes</label>
           <textarea id="itemNotes" class="textarea-input" rows="3" placeholder="Additional secret notes, recovery codes, PINs…"></textarea>
         </div>
@@ -562,6 +582,10 @@
             <button type="button" id="detailOpenWebsiteBtn" class="btn-card-action" title="Open in default browser">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               <span>Open</span>
+            </button>
+            <button type="button" id="detailAutofillBtn" class="btn-card-action btn-autofill" title="Open HTTPS login page and fill saved details">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+              <span>Open &amp; Fill</span>
             </button>
             <button type="button" id="detailCopyWebsiteBtn" class="btn-card-action" title="Copy URL">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>

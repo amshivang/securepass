@@ -1,174 +1,155 @@
-# 🛡️ SecurePass — Zero-Knowledge Windows Password Manager & Security Analyzer
+# SecurePass
 
-[![Release](https://img.shields.io/badge/release-v1.0.1-blue.svg)](#-downloads-release-v101)
-[![Platform](https://img.shields.io/badge/platform-Windows-0078D6.svg?logo=windows)](#-downloads-release-v101)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#-testing)
-[![Security](https://img.shields.io/badge/encryption-AES--256--GCM-green.svg)](#-zero-knowledge-security-architecture)
-[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+SecurePass is a local-first Windows password manager, authenticator, and password security analyzer built with Electron. Vault data is encrypted on the device with AES-256-GCM. The master password is never stored or sent to a server.
 
-**SecurePass** is a privacy-first, zero-knowledge desktop password manager, authenticator, and real-time security analyzer designed specifically for Windows. Built with an ultra-clean, minimalist pure-black aesthetic, SecurePass combines **Bitwarden-grade client-side encryption**, an integrated **RFC 6238 TOTP 2FA engine**, and an advanced **Shannon entropy and pattern security analyzer**.
+> SecurePass is a personal desktop project. Review the source and make backups before relying on it for irreplaceable credentials.
 
-Your master password never leaves your device. All your logins, 2FA authenticator seeds, payment cards, and secret notes are encrypted and stored locally in system memory and locked behind authenticated AES-256-GCM encryption.
+## Features
 
----
+### Encrypted vault
 
-## 📥 Downloads (Release v1.0.1)
+- AES-256-GCM authenticated encryption with a fresh IV for every save.
+- PBKDF2-HMAC-SHA256 key derivation with 600,000 iterations for new vaults.
+- Compatible with legacy 100,000-iteration vaults; password rotation upgrades them.
+- Cryptographically random salt and encryption key.
+- Atomic, flushed writes with restrictive file permissions.
+- Memory cleanup when locking the vault or closing the application.
+- Master password rotation with a fresh salt and key.
+- Encrypted and optional plaintext backup export.
+- Encrypted backup import with merge and replace modes.
 
-| Download Type | File Name | Description |
-| :--- | :--- | :--- |
-| **🚀 Windows Installer (Recommended)** | [**`SecurePass-Setup-1.0.1.exe`**](https://github.com/amshivang/securepass/releases/download/v1.0.1/SecurePass-Setup-1.0.1.exe) | Standard Windows setup wizard. Installs into your user Programs folder, creates desktop shortcut, and integrates into the Windows Start Menu & Search. |
+### Credential management
 
----
+- Logins, payment cards, and secure notes.
+- Search and category filtering.
+- Favorites and a Favorites filter.
+- Custom fields for PINs, employee IDs, organization names, and account identifiers.
+- TOTP authenticator support using RFC 6238.
+- Password generator with configurable length and character groups.
+- Password strength, entropy, common-pattern, and breach analysis.
+- Local dashboard for weak and reused passwords.
+- Sensitive clipboard auto-clear after 30 seconds, with manual clearing.
 
-## ✨ Key Features
+### Open & Fill
 
-### 🔐 1. Zero-Knowledge Cryptographic Vault
-* **Authenticated AES-256-GCM Encryption:** Every credential (title, username, password, URL, notes) is encrypted into an authenticated ciphertext envelope before being saved to disk.
-* **PBKDF2-HMAC-SHA256 Key Derivation:** Uses 100,000 iterations and a cryptographically secure 16-byte random salt to derive the vault encryption key from your Master Password.
-* **Master Password Rotation:** Rotate your master password at any time. SecurePass re-derives the key, generates a fresh random salt, and re-encrypts the entire vault using `crypto.timingSafeEqual` authentication.
-* **Zero-Knowledge Architecture:** Your master password is never stored on disk or transmitted across any network. Only someone with your exact master password can decrypt the vault.
-* **RAM Key Zeroing:** When the vault is locked or the application is closed, the derived encryption key buffer in memory is immediately cleared and zeroed out.
-* **Atomic File Writes:** Prevents file corruption during unexpected power outages or app shutdowns by using atomic rename operations.
+The credential details view includes **Open & Fill** for Login items with an HTTPS URL.
 
-### 📋 2. Complete Password & Vault Management
-* **Categorized Items:** Organize your digital credentials by **Logins**, **Credit / Debit Cards**, and **Secure Notes**.
-* **Instant Fuzzy Search:** Filter through all your saved accounts and notes in real-time as you type.
-* **One-Click Quick Copy:**
-  * **Copy Username:** Instant copy with toast confirmation.
-  * **Copy Password with Auto-Clear:** Copies the password and automatically triggers a 30-second countdown that wipes your Windows clipboard.
-  * **Immediate Exit Flush:** If you close or exit the app while a sensitive password is still in the clipboard, it is flushed immediately.
-* **CRUD Capabilities:** Easily add, edit, view, or permanently delete items.
-* **In-Modal Generator:** Generate high-entropy passwords with real-time strength feedback without leaving the item creation form.
+1. Open a Login item.
+2. Select **Open & Fill**.
+3. SecurePass opens the saved site in a separate protected login window.
+4. Matching username, password, and custom fields are filled when the form is detected.
+5. Review the form and submit it yourself.
 
-### 🧠 3. Real-Time Password Strength Analyzer & Generator
-* **Real-time Entropy Scoring:** Evaluates character variety, length, uniqueness, and Shannon entropy to provide an accurate security score (out of 15).
-* **Realistic Brute-Force Crack Estimation:** Calculates the realistic time an attacker would take using high-speed offline dictionary clusters (ranging from "Instant" to "Trillions of years").
-* **Common Pattern & Dictionary Detection:** Catches keyboard walks, repetition patterns, and dictionary passwords.
-* **Actionable Improvement Plans:** Delivers specific, actionable feedback on what characters or length to add.
-* **Cryptographic Generator:** Generates 18–20 character cryptographically secure passwords client-side using `crypto.getRandomValues`.
-* **k-Anonymity Breach Checker:** An opt-in breach scanner that queries HaveIBeenPwned's API using 5-character SHA-1 hash prefixes (k-anonymity) — your actual password never leaves your computer.
+Open & Fill:
 
-### ⚙️ 4. Security Hardening, Controls & Portability
-* **Master Password Rotation:** Update your master password safely inside Settings; all vault data is automatically re-encrypted with a brand new salt.
-* **True Encrypted Backups:** Export your entire vault as an encrypted AES-256-GCM ciphertext JSON envelope for cold storage or device migration.
-* **Plaintext Backup with Safeguards:** Explicit plaintext export option guarded by a clear security confirmation prompt.
-* **Import Backup:** Restore your credentials from an encrypted backup envelope at any time.
-* **Inactivity Auto-Lock:** Automatically locks your vault after 15 minutes of inactivity to protect your credentials when stepping away from your PC.
-* **Quick Lock Button:** Immediately lock your vault with a single click in the top header.
-* **Content Security Policy (CSP):** Strict CSP meta headers blocking unauthorized remote scripts and origins.
-* **Safe External Navigation:** External hyperlinks are intercepted and safely opened in the user's default system browser using `shell.openExternal`.
+- Requires HTTPS.
+- Is restricted to the saved website origin.
+- Never submits a form automatically.
+- Never overwrites a field that already contains a value.
+- Retries for client-rendered login forms.
+- Closes when the vault locks, the system suspends, or SecurePass exits.
+- Uses a temporary browser session with permissions, popups, and embedded webviews disabled.
 
----
+## Security model
 
-## 🎨 Minimalist Pure-Black User Interface
-
-SecurePass is crafted with a distraction-free, modern dark aesthetic:
-* `#0a0a0a` deep black background with glassmorphic `#121212` surface cards.
-* High-contrast text typography (`Inter` & `JetBrains Mono`).
-* Glowing status accents (Emerald for secure/strong, Amber for medium, Crimson for weak/alerts).
-* Smooth, native micro-interactions and transitions.
-
----
-
-## 🛡️ Zero-Knowledge Security Architecture
-
-SecurePass follows the same zero-knowledge client encryption principles used by industry-leading password managers:
-
-```
-[ Master Password ] + [ 16-byte Cryptographic Salt ]
-                       │
-                       ▼
-         PBKDF2-HMAC-SHA256 (100,000 Rounds)
-                       │
-                       ▼
-              [ 256-Bit Master Key ]
-                       │
-                       ▼
-         AES-256-GCM Authenticated Encryption
-          (Fresh 12-byte IV + 16-byte Auth Tag)
-                       │
-                       ▼
-        [ Encrypted Vault File on Disk ]
+```text
+Master password + random 16-byte salt
+                │
+                ▼
+PBKDF2-HMAC-SHA256, 600,000 iterations
+                │
+                ▼
+256-bit encryption key
+                │
+                ▼
+AES-256-GCM + fresh 12-byte IV + 16-byte authentication tag
+                │
+                ▼
+Encrypted vault file on disk
 ```
 
----
+The vault file contains encrypted data and cryptographic metadata only. The master password is not recoverable. Losing it means losing access unless an accessible backup uses a known password.
 
-## 🛠️ Technology Stack
+The optional Have I Been Pwned check uses k-anonymity: only the first five characters of a SHA-1 hash are sent. The password itself is never sent.
 
-| Layer | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Desktop Runtime** | Electron | Cross-platform desktop window and lifecycle management |
-| **Cryptography** | Node.js Native `crypto` (OpenSSL) | PBKDF2 key derivation and AES-256-GCM encryption |
-| **Frontend UI** | Vanilla HTML5, CSS3, JavaScript | Lightweight, zero-bloat, high-performance UI |
-| **Entropy Math** | Web Crypto API | Cryptographically secure random generation & hashing |
-| **Testing** | Node.js native `assert` & `crypto` | Zero-dependency cryptographic test suite |
-| **Packaging** | `electron-builder` | Windows NSIS installer and Portable executable builds |
+## Project structure
 
----
+```text
+securepass/
+├── crypto-vault.js       Vault encryption, backups, CRUD, and TOTP
+├── main.js               Electron main process and trusted IPC
+├── preload.js            Main renderer API bridge
+├── autofill.js           URL validation and isolated form-filling logic
+├── login-browser.js      Protected Open & Fill browser window
+├── login-preload.js      Login-window IPC bridge
+├── renderer/
+│   ├── index.html        Main application UI
+│   ├── renderer.js       Main UI controller
+│   ├── analyzer-engine.js Password analysis logic
+│   ├── login.html        Open & Fill toolbar
+│   ├── login.js          Login toolbar controller
+│   ├── style.css         Main application styles
+│   └── login.css         Login toolbar styles
+└── tests/                Unit and desktop integration tests
+```
 
-## 🧪 Testing
+Generated folders such as `node_modules/` and `dist/` are intentionally ignored and are not part of the source repository.
 
-SecurePass includes a comprehensive, zero-dependency automated test suite covering all cryptographic vault operations:
+## Requirements
+
+- Node.js 18 or newer
+- npm 9 or newer
+- Windows for the packaged installer
+- Linux desktop integration tests additionally require `xvfb-run`
+
+## Install and run
+
+```bash
+git clone https://github.com/amshivang/securepass.git
+cd securepass
+npm install
+npm start
+```
+
+## Test
+
+Run syntax checks and the vault, analyzer, hardening, and TOTP tests:
 
 ```bash
 npm test
 ```
 
-The test suite validates:
-* Vault initialization, credential CRUD, and atomic disk persistence.
-* Memory key zeroing and lock integrity.
-* Decryption failure and clean rejection on invalid master passwords.
-* Ciphertext tampering detection using AES-256-GCM authentication tags.
-* Encrypted backup export and roundtrip import.
-* Master password rotation, timing-safe validation, and re-encryption under fresh salts.
+Run the Electron form-filling integration test on Linux:
 
----
-
-## 💻 Building from Source (Local Development)
-
-### Prerequisites
-* [Node.js](https://nodejs.org/) (v18 or higher)
-* `npm` (v9 or higher)
-
-### Setup & Run
 ```bash
-# 1. Clone the repository
-git clone https://github.com/amshivang/securepass.git
-cd securepass
-
-# 2. Install dependencies
-npm install
-
-# 3. Launch application in development mode
-npm start
+npm run test:autofill
 ```
 
-### Packaging Windows Binaries
+## Build Windows packages
+
+Create an unpacked Windows build:
+
 ```bash
-# Build standalone Windows NSIS Installer (.exe)
+npm run pack:win
+```
+
+Create the NSIS installer:
+
+```bash
 npm run dist:win
 ```
-The compiled installer will be output to the `dist/` directory.
 
----
+Build output is written to `dist/`, which is ignored by git.
 
-## 🙏 Credits & Acknowledgments
+## Local data locations
 
-* **[Bitwarden](https://github.com/bitwarden/clients)**: Special credit and gratitude to the Bitwarden open-source project. The cryptographic architecture, zero-knowledge vault model, and PBKDF2 + AES-GCM security concepts implemented in SecurePass are directly inspired by and adapted from Bitwarden's proven open-source client codebase.
-* **[Have I Been Pwned](https://haveibeenpwned.com/)**: For the free, privacy-preserving k-anonymity breach lookup API.
+For an installed application, SecurePass stores the encrypted vault under Electron's user-data directory. Portable builds use a `securepass-data/` directory beside the executable. These runtime locations are excluded from the repository by `.gitignore`.
 
----
+## License
 
-## 📜 License
+SecurePass is licensed under the MIT License. See [LICENSE](LICENSE).
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+## Credits
 
-
----
-<div align="center">
-  <a href="https://www.buymeacoffee.com/amshivang">
-    <img src="https://raw.githubusercontent.com/amshivang/amshivang/main/qr-code.png" alt="Buy Me A Coffee" width="250">
-  </a>
-  <br>
-  <strong><a href="https://www.buymeacoffee.com/amshivang">Support my work on Buy Me A Coffee! ☕</a></strong>
-</div>
+- [Bitwarden](https://github.com/bitwarden/clients) for client-side vault architecture inspiration.
+- [Have I Been Pwned](https://haveibeenpwned.com/) for the k-anonymity breach lookup API.

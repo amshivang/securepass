@@ -1,20 +1,21 @@
 {
   "name": "securepass-desktop",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "description": "SecurePass - Minimalist Zero-Knowledge Windows Password Manager & ML Security Analyzer",
   "main": "main.js",
   "author": "Shivang",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "check": "node -c crypto-vault.js && node -c main.js && node -c preload.js && node -c renderer/analyzer-engine.js && node -c renderer/renderer.js",
-    "test": "npm run check && node tests/crypto-vault.test.js && node tests/analyzer.test.js && node tests/totp.test.js",
+    "check": "node -c crypto-vault.js && node -c main.js && node -c preload.js && node -c autofill.js && node -c login-browser.js && node -c login-preload.js && node -c renderer/analyzer-engine.js && node -c renderer/renderer.js && node -c renderer/login.js",
+    "test": "npm run check && node tests/crypto-vault.test.js && node tests/hardening.test.js && node tests/analyzer.test.js && node tests/totp.test.js",
+    "test:autofill": "xvfb-run -a electron tests/autofill.test.js",
     "pack:win": "electron-builder --win --dir",
     "dist:win": "electron-builder --win"
   },
   "devDependencies": {
-    "electron": "^34.3.0",
-    "electron-builder": "^25.1.8"
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "com.shivang.securepass",
@@ -23,7 +24,6 @@
       "output": "dist"
     },
     "win": {
-      "sign": null,
       "target": [
         "nsis"
       ]

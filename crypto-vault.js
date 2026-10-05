@@ -1,24 +1,202 @@
 /**
  * SecurePass Zero-Knowledge Cryptographic Vault Engine
  * 
- * Implements Bitwarden-grade client-side encryption:
- * - PBKDF2-HMAC-SHA256 (100,000 rounds) key derivation
+ * Implements local authenticated vault encryption:
+ * - PBKDF2-HMAC-SHA256 (600,000 rounds for new vaults) key derivation
  * - AES-256-GCM authenticated encryption (confidentiality + integrity)
  * - Atomic disk writes to protect against data corruption
  * - Memory zeroing on lock
  * 
- * ponytail: Native Node.js crypto used instead of external libraries - zero dependencies, OpenSSL C speed.
- * ponytail: AES-256-GCM provides encryption + authentication in one primitive without separate HMAC.
+ * Uses native Node.js crypto without external cryptographic dependencies.
  */
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_ITERATIONS = 600000;
+const LEGACY_PBKDF2_ITERATIONS = 100000;
+const MIN_PBKDF2_ITERATIONS = 100000;
+const MAX_PBKDF2_ITERATIONS = 5000000;
 const KEY_LENGTH = 32; // 256 bits for AES-256
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12; // Standard 96-bit IV for AES-GCM
+const AUTH_TAG_LENGTH = 16;
+const MIN_MASTER_PASSWORD_LENGTH = 8;
+const MAX_ITEM_FIELD_LENGTHS = {
+  title: 500,
+  username: 2000,
+  password: 4096,
+  url: 2048,
+  notes: 10000,
+  totpSecret: 512
+};
+const ITEM_CATEGORIES = new Set(['Logins', 'Cards', 'Secure Notes']);
+const DEFAULT_CATEGORIES = ['All', 'Logins', 'Cards', 'Secure Notes'];
+const MAX_VAULT_BYTES = 20 * 1024 * 1024;
+
+function validateMasterPassword(masterPassword, fieldName = 'Master password') {
+  if (typeof masterPassword !== 'string' || masterPassword.length < MIN_MASTER_PASSWORD_LENGTH) {
+    throw new Error(`${fieldName} must be at least ${MIN_MASTER_PASSWORD_LENGTH} characters.`);
+  }
+}
+
+function getIterationCount(value, allowMissing = false) {
+  if (value === undefined && allowMissing) return LEGACY_PBKDF2_ITERATIONS;
+  if (!Number.isSafeInteger(value) || value < MIN_PBKDF2_ITERATIONS || value > MAX_PBKDF2_ITERATIONS) {
+    throw new Error('Invalid vault file format.');
+  }
+  return value;
+}
+
+function decodeHexField(value, expectedBytes, fieldName) {
+  if (typeof value !== 'string' || value.length !== expectedBytes * 2 || !/^[0-9a-f]+$/i.test(value)) {
+    throw new Error(`Invalid vault file format: malformed ${fieldName}.`);
+  }
+  return Buffer.from(value, 'hex');
+}
+
+function validateEnvelope(envelope) {
+  if (!envelope || Array.isArray(envelope) || envelope.version !== 1 || envelope.kdf !== 'PBKDF2-HMAC-SHA256') {
+    throw new Error('Invalid vault file format.');
+  }
+}
+
+function scrubBuffer(buffer) {
+  if (Buffer.isBuffer(buffer)) buffer.fill(0);
+}
+
+function scrubVaultData(data) {
+  if (!data || !Array.isArray(data.items)) return;
+  for (const item of data.items) {
+    if (!item || typeof item !== 'object') continue;
+    for (const key of ['password', 'username', 'notes', 'totpSecret']) {
+      if (typeof item[key] === 'string') item[key] = '';
+    }
+    if (Array.isArray(item.customFields)) {
+      for (const field of item.customFields) field.value = '';
+      item.customFields.length = 0;
+    }
+  }
+  data.items.length = 0;
+}
+
+function assertStringField(value, fieldName, maxLength, fallback = '') {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value !== 'string') {
+    throw new Error(`Invalid item: ${fieldName} must be a string.`);
+  }
+  if (value.length > maxLength) {
+    throw new Error(`Invalid item: ${fieldName} is too long.`);
+  }
+  return value;
+}
+
+function normalizeItem(item, { preserveId = false } = {}) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    throw new Error('Invalid item: expected an object.');
+  }
+
+  const id = item.id === undefined || item.id === null || item.id === ''
+    ? crypto.randomUUID()
+    : assertStringField(item.id, 'id', 128);
+  if (!id.trim()) throw new Error('Invalid item: id must not be empty.');
+  if (!preserveId && item.id !== undefined && item.id !== null && item.id !== '') {
+    throw new Error('Invalid item: id cannot be changed.');
+  }
+
+  const category = item.category === undefined || item.category === null || item.category === ''
+    ? 'Logins'
+    : assertStringField(item.category, 'category', 64);
+  if (!ITEM_CATEGORIES.has(category)) {
+    throw new Error(`Invalid item: unsupported category "${category}".`);
+  }
+
+  const now = new Date().toISOString();
+  const createdAt = item.createdAt === undefined
+    ? now
+    : assertStringField(item.createdAt, 'createdAt', 64, now);
+  const updatedAt = item.updatedAt === undefined
+    ? now
+    : assertStringField(item.updatedAt, 'updatedAt', 64, now);
+
+  return {
+    id,
+    title: assertStringField(item.title, 'title', MAX_ITEM_FIELD_LENGTHS.title, 'Untitled') || 'Untitled',
+    username: assertStringField(item.username, 'username', MAX_ITEM_FIELD_LENGTHS.username),
+    password: assertStringField(item.password, 'password', MAX_ITEM_FIELD_LENGTHS.password),
+    url: assertStringField(item.url, 'url', MAX_ITEM_FIELD_LENGTHS.url),
+    notes: assertStringField(item.notes, 'notes', MAX_ITEM_FIELD_LENGTHS.notes),
+    category,
+    favorite: Boolean(item.favorite),
+    totpSecret: assertStringField(item.totpSecret, 'totpSecret', MAX_ITEM_FIELD_LENGTHS.totpSecret).trim(),
+    customFields: normalizeCustomFields(item.customFields),
+    createdAt,
+    updatedAt
+  };
+}
+
+function normalizeCustomFields(fields = []) {
+  if (!Array.isArray(fields) || fields.length > 20) {
+    throw new Error('Invalid item: at most 20 custom fields are allowed.');
+  }
+  return fields.map(field => {
+    if (!field || typeof field !== 'object' || Array.isArray(field)) throw new Error('Invalid custom field.');
+    const name = assertStringField(field.name, 'custom field name', 200).trim();
+    if (!name) throw new Error('Custom fields need a field name or ID.');
+    return { name, value: assertStringField(field.value, 'custom field value', 4096) };
+  });
+}
+
+function normalizeVaultData(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.items)) {
+    throw new Error('Invalid vault payload.');
+  }
+
+  const items = data.items.map(item => normalizeItem(item, { preserveId: true }));
+  if (new Set(items.map(item => item.id)).size !== items.length) throw new Error('Duplicate item IDs in vault.');
+  return {
+    version: Number.isSafeInteger(data.version) ? data.version : 1,
+    createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString(),
+    items,
+    categories: Array.isArray(data.categories) && data.categories.every(category => typeof category === 'string')
+      ? [...data.categories]
+      : [...DEFAULT_CATEGORIES]
+  };
+}
+
+function writeAtomicFile(filePath, contents) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const tmpFile = `${filePath}.tmp`;
+  let fileHandle;
+  try {
+    if (fs.existsSync(tmpFile)) {
+      const temporaryStat = fs.lstatSync(tmpFile);
+      if (!temporaryStat.isFile()) throw new Error('Unsafe vault temporary file.');
+      fs.unlinkSync(tmpFile);
+    }
+    // Exclusive creation prevents following an existing temporary-file symlink.
+    fileHandle = fs.openSync(tmpFile, 'wx', 0o600);
+    fs.writeFileSync(fileHandle, contents, 'utf8');
+    fs.fsyncSync(fileHandle);
+    fs.closeSync(fileHandle);
+    fileHandle = null;
+    fs.renameSync(tmpFile, filePath);
+    // Tighten permissions for existing vaults as well as newly created ones.
+    fs.chmodSync(filePath, 0o600);
+  } catch (error) {
+    const created = fileHandle !== undefined;
+    if (fileHandle !== undefined && fileHandle !== null) fs.closeSync(fileHandle);
+    try {
+      if (created && fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+    } catch (_cleanupError) {
+      // Preserve the original write error.
+    }
+    throw error;
+  }
+}
 
 /**
  * Decode standard RFC 4648 Base32 string to Buffer.
@@ -28,6 +206,7 @@ function base32Decode(base32) {
   if (!base32 || typeof base32 !== 'string') return Buffer.alloc(0);
   const clean = base32.toUpperCase().replace(/[\s=-]/g, '');
   if (!clean.length) return Buffer.alloc(0);
+  if (clean.length > 1024) throw new Error('Base32 secret is too long.');
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   let bits = '';
   for (let i = 0; i < clean.length; i++) {
@@ -51,6 +230,15 @@ function base32Decode(base32) {
  */
 function generateTOTP(secret, timestamp = Date.now(), stepSeconds = 30) {
   if (!secret) return null;
+  if (typeof secret !== 'string') {
+    throw new Error('TOTP secret must be a string.');
+  }
+  if (!Number.isFinite(timestamp) || timestamp < 0) {
+    throw new Error('TOTP timestamp must be a non-negative number.');
+  }
+  if (!Number.isSafeInteger(stepSeconds) || stepSeconds <= 0 || stepSeconds > 86400) {
+    throw new Error('TOTP step must be a positive integer no greater than 86400 seconds.');
+  }
   const key = base32Decode(secret);
   if (key.length === 0) return null;
   const epoch = Math.floor(timestamp / 1000);
@@ -59,7 +247,12 @@ function generateTOTP(secret, timestamp = Date.now(), stepSeconds = 30) {
   const counterBuf = Buffer.alloc(8);
   counterBuf.writeBigUInt64BE(BigInt(counter));
 
-  const hmac = crypto.createHmac('sha1', key).update(counterBuf).digest();
+  let hmac;
+  try {
+    hmac = crypto.createHmac('sha1', key).update(counterBuf).digest();
+  } finally {
+    scrubBuffer(key);
+  }
   const offset = hmac[hmac.length - 1] & 0x0f;
   const codeInt = ((hmac[offset] & 0x7f) << 24) |
                   ((hmac[offset + 1] & 0xff) << 16) |
@@ -79,6 +272,7 @@ class CryptoVault {
     this.unlockedData = null;
     this.isUnlocked = false;
     this.salt = null;
+    this.kdfIterations = PBKDF2_ITERATIONS;
   }
 
   /**
@@ -91,11 +285,11 @@ class CryptoVault {
   /**
    * Derive 256-bit encryption key from master password using PBKDF2
    */
-  _deriveKey(masterPassword, salt) {
+  _deriveKey(masterPassword, salt, iterations = this.kdfIterations) {
     return crypto.pbkdf2Sync(
       masterPassword,
       salt,
-      PBKDF2_ITERATIONS,
+      iterations,
       KEY_LENGTH,
       'sha256'
     );
@@ -104,12 +298,12 @@ class CryptoVault {
   /**
    * Non-blocking PBKDF2 key derivation using worker thread pool
    */
-  _deriveKeyAsync(masterPassword, salt) {
+  _deriveKeyAsync(masterPassword, salt, iterations = this.kdfIterations) {
     return new Promise((resolve, reject) => {
       crypto.pbkdf2(
         masterPassword,
         salt,
-        PBKDF2_ITERATIONS,
+        iterations,
         KEY_LENGTH,
         'sha256',
         (err, derivedKey) => {
@@ -124,22 +318,29 @@ class CryptoVault {
    * Initialize a brand new vault with a master password
    */
   initialize(masterPassword) {
+    validateMasterPassword(masterPassword);
     if (this.exists()) {
       throw new Error('Vault already exists. Unlock it or delete the existing file.');
     }
 
     const salt = crypto.randomBytes(SALT_LENGTH);
     this.salt = salt;
+    this.kdfIterations = PBKDF2_ITERATIONS;
     this.derivedKey = this._deriveKey(masterPassword, salt);
     this.unlockedData = {
       version: 1,
       createdAt: new Date().toISOString(),
       items: [],
-      categories: ['All', 'Logins', 'Cards', 'Secure Notes'],
+      categories: [...DEFAULT_CATEGORIES],
     };
     this.isUnlocked = true;
 
-    this.save();
+    try {
+      this.save();
+    } catch (error) {
+      this.lock();
+      throw error;
+    }
     return { success: true };
   }
 
@@ -147,11 +348,21 @@ class CryptoVault {
    * Unlock an existing vault with master password
    */
   unlock(masterPassword) {
+    validateMasterPassword(masterPassword);
+    if (this.isUnlocked) {
+      throw new Error('Vault is already unlocked.');
+    }
     if (!this.exists()) {
       throw new Error('Vault file not found.');
     }
 
-    const raw = fs.readFileSync(this.vaultFilePath, 'utf8');
+    let raw;
+    try {
+      if (fs.statSync(this.vaultFilePath).size > MAX_VAULT_BYTES) throw new Error('Vault file too large.');
+      raw = fs.readFileSync(this.vaultFilePath, 'utf8');
+    } catch (_error) {
+      throw new Error('Unable to read vault file.');
+    }
     let envelope;
     try {
       envelope = JSON.parse(raw);
@@ -159,30 +370,56 @@ class CryptoVault {
       throw new Error('Corrupted vault file format.');
     }
 
-    const salt = Buffer.from(envelope.salt, 'hex');
-    const iv = Buffer.from(envelope.iv, 'hex');
-    const tag = Buffer.from(envelope.tag, 'hex');
-    const ciphertext = Buffer.from(envelope.data, 'hex');
+    let salt;
+    let iv;
+    let tag;
+    let ciphertext;
+    let iterations;
+    try {
+      validateEnvelope(envelope);
+      salt = decodeHexField(envelope.salt, SALT_LENGTH, 'salt');
+      iv = decodeHexField(envelope.iv, IV_LENGTH, 'iv');
+      tag = decodeHexField(envelope.tag, AUTH_TAG_LENGTH, 'authentication tag');
+      if (typeof envelope.data !== 'string' || envelope.data.length % 2 !== 0 ||
+          (envelope.data.length > 0 && !/^[0-9a-f]+$/i.test(envelope.data))) {
+        throw new Error('Invalid vault file format: malformed ciphertext.');
+      }
+      ciphertext = Buffer.from(envelope.data, 'hex');
+      iterations = getIterationCount(envelope.iterations, true);
+    } catch (error) {
+      if (error.message === 'Invalid vault file format.') {
+        throw error;
+      }
+      throw new Error('Corrupted vault file format.');
+    }
 
-    const key = this._deriveKey(masterPassword, salt);
+    const key = this._deriveKey(masterPassword, salt, iterations);
 
+    let decrypted;
     try {
       const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
       decipher.setAuthTag(tag);
-      const decrypted = Buffer.concat([
+      decrypted = Buffer.concat([
         decipher.update(ciphertext),
         decipher.final()
       ]);
 
+      const parsedData = JSON.parse(decrypted.toString('utf8'));
+      const normalizedData = normalizeVaultData(parsedData);
+
       this.salt = salt;
+      this.kdfIterations = iterations;
       this.derivedKey = key;
-      this.unlockedData = JSON.parse(decrypted.toString('utf8'));
+      this.unlockedData = normalizedData;
       this.isUnlocked = true;
 
       return { success: true, data: this.unlockedData };
     } catch (err) {
       // GCM authentication failed -> wrong password or tampered ciphertext
+      scrubBuffer(key);
       throw new Error('Invalid master password or vault has been corrupted.');
+    } finally {
+      scrubBuffer(decrypted);
     }
   }
 
@@ -190,31 +427,15 @@ class CryptoVault {
    * Lock vault and clear master key from memory
    */
   lock() {
-    if (this.derivedKey) {
-      // Zero out key buffer
-      this.derivedKey.fill(0);
-      this.derivedKey = null;
-    }
-    if (this.salt) {
-      if (Buffer.isBuffer(this.salt)) {
-        this.salt.fill(0);
-      }
-      this.salt = null;
-    }
-
-    // In-place scrub sensitive plaintext fields from memory
-    if (this.unlockedData && Array.isArray(this.unlockedData.items)) {
-      for (const item of this.unlockedData.items) {
-        if (typeof item.password === 'string') item.password = '';
-        if (typeof item.username === 'string') item.username = '';
-        if (typeof item.notes === 'string') item.notes = '';
-        if (typeof item.totpSecret === 'string') item.totpSecret = '';
-      }
-      this.unlockedData.items.length = 0;
-    }
+    scrubBuffer(this.derivedKey);
+    this.derivedKey = null;
+    scrubBuffer(this.salt);
+    this.salt = null;
+    scrubVaultData(this.unlockedData);
 
     this.unlockedData = null;
     this.isUnlocked = false;
+    this.kdfIterations = PBKDF2_ITERATIONS;
     return { success: true };
   }
 
@@ -237,12 +458,8 @@ class CryptoVault {
    */
   changeMasterPassword(currentPassword, newPassword) {
     this._ensureUnlocked();
-    if (!currentPassword) {
-      throw new Error('Current master password is required.');
-    }
-    if (!newPassword || newPassword.length < 8) {
-      throw new Error('New master password must be at least 8 characters.');
-    }
+    validateMasterPassword(currentPassword, 'Current master password');
+    validateMasterPassword(newPassword, 'New master password');
     if (currentPassword === newPassword) {
       throw new Error('New master password must be different from current master password.');
     }
@@ -258,16 +475,30 @@ class CryptoVault {
     }
 
     // 2. Generate brand new salt and derive new key
+    const oldKey = this.derivedKey;
+    const oldSalt = this.salt;
+    const oldIterations = this.kdfIterations;
     const newSalt = crypto.randomBytes(SALT_LENGTH);
-    const newKey = this._deriveKey(newPassword, newSalt);
+    const newKey = this._deriveKey(newPassword, newSalt, PBKDF2_ITERATIONS);
 
-    // 3. Update active session credentials
-    if (this.derivedKey) this.derivedKey.fill(0);
+    // Re-encrypt before discarding the old active session so a failed write can
+    // safely continue using the original key and salt.
     this.derivedKey = newKey;
     this.salt = newSalt;
+    this.kdfIterations = PBKDF2_ITERATIONS;
+    try {
+      this.save();
+    } catch (error) {
+      scrubBuffer(newKey);
+      scrubBuffer(newSalt);
+      this.derivedKey = oldKey;
+      this.salt = oldSalt;
+      this.kdfIterations = oldIterations;
+      throw error;
+    }
 
-    // 4. Re-encrypt entire vault with new key and new salt
-    this.save();
+    scrubBuffer(oldKey);
+    scrubBuffer(oldSalt);
     return { success: true };
   }
 
@@ -284,26 +515,30 @@ class CryptoVault {
     }
     const salt = this.salt;
 
-    // Ensure directory exists
-    const dir = path.dirname(this.vaultFilePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv('aes-256-gcm', this.derivedKey, iv);
 
     const plaintext = Buffer.from(JSON.stringify(this.unlockedData), 'utf8');
-    const ciphertext = Buffer.concat([
-      cipher.update(plaintext),
-      cipher.final()
-    ]);
-    const tag = cipher.getAuthTag();
+    if (plaintext.length * 2 + 1024 > MAX_VAULT_BYTES) {
+      scrubBuffer(plaintext);
+      throw new Error('Vault exceeds the 20 MB size limit.');
+    }
+    let ciphertext;
+    let tag;
+    try {
+      ciphertext = Buffer.concat([
+        cipher.update(plaintext),
+        cipher.final()
+      ]);
+      tag = cipher.getAuthTag();
+    } finally {
+      scrubBuffer(plaintext);
+    }
 
     const envelope = {
       version: 1,
       kdf: 'PBKDF2-HMAC-SHA256',
-      iterations: PBKDF2_ITERATIONS,
+      iterations: this.kdfIterations,
       salt: salt.toString('hex'),
       iv: iv.toString('hex'),
       tag: tag.toString('hex'),
@@ -311,10 +546,9 @@ class CryptoVault {
       updatedAt: new Date().toISOString()
     };
 
-    // Atomic write to prevent partial writes
-    const tmpFile = `${this.vaultFilePath}.tmp`;
-    fs.writeFileSync(tmpFile, JSON.stringify(envelope, null, 2), 'utf8');
-    fs.renameSync(tmpFile, this.vaultFilePath);
+    // Atomic, flushed write to prevent partial writes and reduce the chance of
+    // leaving a readable vault file with default permissions.
+    writeAtomicFile(this.vaultFilePath, JSON.stringify(envelope, null, 2));
 
     return { success: true };
   }
@@ -337,21 +571,8 @@ class CryptoVault {
 
   addItem(item) {
     this._ensureUnlocked();
-    const newItem = {
-      id: crypto.randomUUID(),
-      title: item.title || 'Untitled',
-      username: item.username || '',
-      password: item.password || '',
-      url: item.url || '',
-      notes: item.notes || '',
-      category: item.category || 'Logins',
-      favorite: !!item.favorite,
-      totpSecret: (item.totpSecret || '').trim(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    this.unlockedData.items.unshift(newItem);
-    this.save();
+    const newItem = normalizeItem(item);
+    this._commitItems([newItem, ...this.unlockedData.items]);
     return newItem;
   }
 
@@ -360,27 +581,45 @@ class CryptoVault {
     const index = this.unlockedData.items.findIndex(i => i.id === id);
     if (index === -1) throw new Error('Item not found');
 
-    const sanitizedUpdate = { ...itemUpdate };
-    if (sanitizedUpdate.totpSecret !== undefined) {
-      sanitizedUpdate.totpSecret = (sanitizedUpdate.totpSecret || '').trim();
+    if (!itemUpdate || typeof itemUpdate !== 'object' || Array.isArray(itemUpdate)) {
+      throw new Error('Invalid item update: expected an object.');
     }
 
-    this.unlockedData.items[index] = {
+    const allowedFields = ['title', 'username', 'password', 'url', 'notes', 'category', 'favorite', 'totpSecret', 'customFields'];
+    const sanitizedUpdate = {};
+    for (const field of allowedFields) {
+      if (!Object.prototype.hasOwnProperty.call(itemUpdate, field)) continue;
+      if (field === 'category') {
+        const category = assertStringField(itemUpdate[field], field, 64);
+        if (!ITEM_CATEGORIES.has(category)) throw new Error(`Invalid item: unsupported category "${category}".`);
+        sanitizedUpdate[field] = category;
+      } else if (field === 'favorite') {
+        sanitizedUpdate[field] = Boolean(itemUpdate[field]);
+      } else if (field === 'customFields') {
+        sanitizedUpdate[field] = normalizeCustomFields(itemUpdate[field]);
+      } else {
+        sanitizedUpdate[field] = assertStringField(itemUpdate[field], field, MAX_ITEM_FIELD_LENGTHS[field]);
+        if (field === 'totpSecret') sanitizedUpdate[field] = sanitizedUpdate[field].trim();
+      }
+    }
+
+    const items = [...this.unlockedData.items];
+    items[index] = {
       ...this.unlockedData.items[index],
       ...sanitizedUpdate,
       id, // protect ID
       updatedAt: new Date().toISOString()
     };
-    this.save();
+    this._commitItems(items);
     return this.unlockedData.items[index];
   }
 
   deleteItem(id) {
     this._ensureUnlocked();
     const before = this.unlockedData.items.length;
-    this.unlockedData.items = this.unlockedData.items.filter(i => i.id !== id);
-    if (this.unlockedData.items.length === before) throw new Error('Item not found');
-    this.save();
+    const items = this.unlockedData.items.filter(i => i.id !== id);
+    if (items.length === before) throw new Error('Item not found');
+    this._commitItems(items);
     return { success: true };
   }
 
@@ -399,8 +638,13 @@ class CryptoVault {
   }
 
   importEncryptedBackup(backupEnvelopeString, masterPassword, mergeMode = 'merge') {
+    validateMasterPassword(masterPassword, 'Backup master password');
+    this._validateMergeMode(mergeMode);
     let envelope;
     try {
+      if (typeof backupEnvelopeString === 'string' && Buffer.byteLength(backupEnvelopeString) > MAX_VAULT_BYTES) {
+        throw new Error('Backup too large.');
+      }
       envelope = typeof backupEnvelopeString === 'string' ? JSON.parse(backupEnvelopeString) : backupEnvelopeString;
     } catch (e) {
       throw new Error('Invalid encrypted backup format: invalid JSON.');
@@ -410,56 +654,83 @@ class CryptoVault {
       throw new Error('Invalid encrypted backup envelope: missing required crypto fields (salt, iv, tag, data).');
     }
 
-    const salt = Buffer.from(envelope.salt, 'hex');
-    const iv = Buffer.from(envelope.iv, 'hex');
-    const tag = Buffer.from(envelope.tag, 'hex');
-    const ciphertext = Buffer.from(envelope.data, 'hex');
-
-    if (salt.length !== SALT_LENGTH || iv.length !== IV_LENGTH || tag.length !== 16) {
+    let salt;
+    let iv;
+    let tag;
+    let ciphertext;
+    let iterations;
+    try {
+      validateEnvelope(envelope);
+      salt = decodeHexField(envelope.salt, SALT_LENGTH, 'salt');
+      iv = decodeHexField(envelope.iv, IV_LENGTH, 'iv');
+      tag = decodeHexField(envelope.tag, AUTH_TAG_LENGTH, 'authentication tag');
+      if (typeof envelope.data !== 'string' || envelope.data.length % 2 !== 0 ||
+          (envelope.data.length > 0 && !/^[0-9a-f]+$/i.test(envelope.data))) {
+        throw new Error('malformed ciphertext');
+      }
+      ciphertext = Buffer.from(envelope.data, 'hex');
+      iterations = getIterationCount(envelope.iterations, true);
+    } catch (_error) {
       throw new Error('Invalid encrypted backup envelope: malformed cryptographic parameters.');
     }
 
-    const key = this._deriveKey(masterPassword, salt);
+    const key = this._deriveKey(masterPassword, salt, iterations);
     let decryptedData;
+    let decrypted;
     try {
       const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
       decipher.setAuthTag(tag);
-      const decrypted = Buffer.concat([
+      decrypted = Buffer.concat([
         decipher.update(ciphertext),
         decipher.final()
       ]);
       decryptedData = JSON.parse(decrypted.toString('utf8'));
     } catch (err) {
+      scrubBuffer(key);
       throw new Error('Invalid master password for encrypted backup or backup file is corrupted.');
+    } finally {
+      scrubBuffer(decrypted);
     }
 
     if (!decryptedData || !Array.isArray(decryptedData.items)) {
+      scrubBuffer(key);
       throw new Error('Invalid backup payload: missing items array.');
+    }
+    try {
+      decryptedData = normalizeVaultData(decryptedData);
+    } catch (_error) {
+      scrubBuffer(key);
+      throw new Error('Invalid backup payload: malformed item data.');
     }
 
     const effectiveMode = (!this.isUnlocked && !this.exists()) ? 'replace' : mergeMode;
-    if (effectiveMode === 'merge') {
-      this._ensureUnlocked();
-      const result = this._applyImportedItems(decryptedData.items, 'merge');
-      key.fill(0);
-      return result;
+    if (this.isUnlocked || effectiveMode === 'merge') {
+      try {
+        this._ensureUnlocked();
+        return this._applyImportedItems(decryptedData.items, effectiveMode);
+      } finally {
+        scrubBuffer(key);
+        scrubVaultData(decryptedData);
+      }
     }
 
-    // Atomic write to prevent partial writes
-    const dir = path.dirname(this.vaultFilePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const previousKey = this.derivedKey;
+    const previousSalt = this.salt;
+    const previousData = this.unlockedData;
+    try {
+      writeAtomicFile(this.vaultFilePath, JSON.stringify(envelope, null, 2));
+    } catch (error) {
+      scrubBuffer(key);
+      throw error;
     }
-    const tmpFile = `${this.vaultFilePath}.tmp`;
-    fs.writeFileSync(tmpFile, JSON.stringify(envelope, null, 2), 'utf8');
-    fs.renameSync(tmpFile, this.vaultFilePath);
 
-    // Set active session data
-    if (this.derivedKey) {
-      this.derivedKey.fill(0);
-    }
+    // Set active session data only after the encrypted file is safely written.
+    scrubBuffer(previousKey);
+    scrubBuffer(previousSalt);
+    scrubVaultData(previousData);
     this.salt = salt;
     this.derivedKey = key;
+    this.kdfIterations = iterations;
     this.unlockedData = decryptedData;
     this.isUnlocked = true;
 
@@ -468,40 +739,56 @@ class CryptoVault {
 
   _applyImportedItems(incomingItems, mergeMode = 'merge') {
     this._ensureUnlocked();
-    if (mergeMode === 'replace') {
-      this.unlockedData.items = incomingItems;
-    } else {
-      const existingMap = new Map();
-      for (const item of this.unlockedData.items) {
-        if (item.id) {
-          existingMap.set(item.id, item);
-        }
-      }
-      for (const item of incomingItems) {
-        if (item.id && existingMap.has(item.id)) {
-          // Update existing item with newer data
-          const existing = existingMap.get(item.id);
-          Object.assign(existing, item);
-        } else {
-          // Add new item
-          this.unlockedData.items.push(item);
-          if (item.id) {
-            existingMap.set(item.id, item);
-          }
-        }
-      }
+    this._validateMergeMode(mergeMode);
+    if (!Array.isArray(incomingItems)) {
+      throw new Error('Invalid backup file format: missing items array.');
     }
-    this.save();
+
+    const existingMap = new Map(mergeMode === 'merge' ? this.unlockedData.items.map(item => [item.id, item]) : []);
+    const incomingIds = new Set();
+    for (const item of incomingItems) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error('Invalid item: expected an object.');
+      const existing = typeof item.id === 'string' ? existingMap.get(item.id) : undefined;
+      const normalized = normalizeItem({ ...existing, ...item }, { preserveId: true });
+      if (incomingIds.has(normalized.id)) throw new Error('Duplicate item IDs in backup.');
+      incomingIds.add(normalized.id);
+      existingMap.set(normalized.id, normalized);
+    }
+    this._commitItems([...existingMap.values()]);
     return { success: true, count: this.unlockedData.items.length };
   }
 
   importBackup(jsonString, mergeMode = 'merge') {
     this._ensureUnlocked();
-    const parsed = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
-    if (!parsed.items || !Array.isArray(parsed.items)) {
+    this._validateMergeMode(mergeMode);
+    let parsed;
+    try {
+      if (typeof jsonString === 'string' && Buffer.byteLength(jsonString) > MAX_VAULT_BYTES) throw new Error('Backup too large.');
+      parsed = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
+    } catch (_error) {
+      throw new Error('Invalid backup file format: invalid JSON.');
+    }
+    if (!parsed || !Array.isArray(parsed.items)) {
       throw new Error('Invalid backup file format: missing items array.');
     }
     return this._applyImportedItems(parsed.items, mergeMode);
+  }
+
+  _validateMergeMode(mergeMode) {
+    if (mergeMode !== 'merge' && mergeMode !== 'replace') {
+      throw new Error('Invalid backup merge mode.');
+    }
+  }
+
+  _commitItems(items) {
+    const previous = this.unlockedData.items;
+    this.unlockedData.items = items;
+    try {
+      this.save();
+    } catch (error) {
+      this.unlockedData.items = previous;
+      throw error;
+    }
   }
 
   _ensureUnlocked() {

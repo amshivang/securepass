@@ -17,9 +17,15 @@ contextBridge.exposeInMainWorld('securePassAPI', {
   vaultImportBackup: (jsonString, mergeMode) => ipcRenderer.invoke('vault:import-backup', jsonString, mergeMode),
   vaultImportEncryptedBackup: (backupEnvelopeString, masterPassword, mergeMode) => ipcRenderer.invoke('vault:import-encrypted-backup', backupEnvelopeString, masterPassword, mergeMode),
   vaultGenerateTOTP: (secret) => ipcRenderer.invoke('vault:generate-totp', secret),
+  openLoginAndFill: (itemId) => ipcRenderer.invoke('app:open-login-and-fill', itemId),
+  clearSensitiveClipboard: () => ipcRenderer.invoke('app:clear-sensitive-clipboard'),
+  getAutoLock: () => ipcRenderer.invoke('app:get-auto-lock'),
+  setAutoLock: (minutes) => ipcRenderer.invoke('app:set-auto-lock', minutes),
   copyToClipboard: (text, isSensitive = false) => ipcRenderer.invoke('app:copy-clipboard', text, isSensitive),
   windowAction: (action) => ipcRenderer.send('app:window-action', action),
   onVaultLocked: (callback) => {
-    ipcRenderer.on('vault:locked', (_event) => callback());
+    const listener = (_event, reason) => callback(reason);
+    ipcRenderer.on('vault:locked', listener);
+    return () => ipcRenderer.removeListener('vault:locked', listener);
   }
 });
