@@ -1,14 +1,42 @@
-# 🛡️ SecurePass
+<div align="center">
 
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D6?style=flat&logo=windows&logoColor=white)](https://github.com/amshivang/securepass/releases)
-[![Electron](https://img.shields.io/badge/Electron-34%2B-47848F?style=flat&logo=electron&logoColor=white)](https://electronjs.org)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat&logo=nodedotjs&logoColor=white)](https://nodejs.org)
-[![Cryptography](https://img.shields.io/badge/Cryptography-AES--256--GCM-7c3aed?style=flat)](https://github.com/amshivang/securepass)
-[![Security](https://img.shields.io/badge/Security-100%25%20Zero--Knowledge%20Offline-10b981?style=flat)](https://github.com/amshivang/securepass)
-[![License](https://img.shields.io/badge/License-MIT-f59e0b?style=flat)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v1.2.1-blue?style=flat&logo=github)](https://github.com/amshivang/securepass/releases/latest)
+  <p>
+    <a href="https://github.com/amshivang"><strong>Shivang Shukla (@amshivang)</strong></a> • 
+    <a href="https://github.com/amshivang?tab=repositories">Portfolio Repositories</a> • 
+    <a href="mailto:linkwithshivang@gmail.com">Contact</a>
+  </p>
 
-**SecurePass** is a privacy-first, zero-knowledge desktop credential manager, RFC 6238 two-factor authenticator (2FA), and real-time cryptographic security analyzer engineered for Windows. Designed with an ultra-clean, minimalist pure-black aesthetic (`#0a0a0a`), SecurePass combines **Bitwarden-grade client-side authenticated encryption**, a **native RFC 6238 TOTP engine**, an **isolated Open & Fill login browser**, and **Shannon entropy mathematical analysis**—all with **zero external runtime dependencies**.
+  # 🛡️ SecurePass
+  ### Minimalist Zero-Knowledge Windows Credential Manager & Cryptographic Analyzer
+
+  <p>
+    <em>A privacy-first, client-side zero-knowledge password vault, RFC 6238 TOTP two-factor authenticator, and cryptographic security analyzer engineered natively for Windows with zero external dependencies.</em>
+  </p>
+
+  <p>
+    <a href="https://github.com/amshivang/securepass/releases"><img src="https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D6?style=for-the-badge&logo=windows11&logoColor=white" alt="Platform"/></a>
+    <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-34%2B-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron"/></a>
+    <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/></a>
+    <a href="#"><img src="https://img.shields.io/badge/Cryptography-AES--256--GCM-7C3AED?style=for-the-badge&logo=shield&logoColor=white" alt="Cryptography"/></a>
+    <a href="#"><img src="https://img.shields.io/badge/Security-100%25%20Zero--Knowledge-059669?style=for-the-badge&logo=shield&logoColor=white" alt="Zero-Knowledge"/></a>
+    <a href="https://github.com/amshivang/securepass/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.1-0284C7?style=for-the-badge&logo=github&logoColor=white" alt="Release"/></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-EAB308?style=for-the-badge" alt="License: MIT"/></a>
+  </p>
+
+  <p>
+    <a href="#-executive-summary--evolution">Evolution</a> •
+    <a href="#-system-architecture">Architecture</a> •
+    <a href="#-key-features">Key Features</a> •
+    <a href="#-cryptographic-deep-dive">Cryptography</a> •
+    <a href="#-project-structure">Structure</a> •
+    <a href="#-prerequisites--getting-started">Getting Started</a> •
+    <a href="#-automated-testing-suite">Testing</a> •
+    <a href="#-author--connect">Author</a>
+  </p>
+
+</div>
+
+---
 
 > **Note:** SecurePass is a local-first desktop application. Vault data is strictly encrypted on your device and never transmitted to any remote server or cloud infrastructure. Always keep encrypted backups of your credentials.
 
@@ -423,10 +451,22 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 - [RFC 6238](https://datatracker.ietf.org/doc/html/rfc6238) & [RFC 4226](https://datatracker.ietf.org/doc/html/rfc4226) for standardized TOTP authenticator specifications.
 
 ---
+
+## 👤 Author & Connect
+
 <div align="center">
-  <a href="https://www.buymeacoffee.com/amshivang">
-    <img src="https://raw.githubusercontent.com/amshivang/amshivang/main/qr-code.png" alt="Buy Me A Coffee" width="250">
+  <p><strong>Shivang Shukla</strong></p>
+  <p><em>Cybersecurity & Digital Forensics Scholar @ UPSIFS (Uttar Pradesh State Institute of Forensic Sciences)</em></p>
+
+  <p>
+    <a href="https://github.com/amshivang"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/></a>
+    <a href="https://www.linkedin.com/in/amshivang/"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/></a>
+    <a href="mailto:linkwithshivang@gmail.com"><img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email"/></a>
+  </p>
+
+  <a href="https://buymeacoffee.com/amshivang">
+    <img src="https://raw.githubusercontent.com/amshivang/amshivang/main/qr-code.png" alt="Buy Me A Coffee" width="180">
   </a>
   <br>
-  <strong><a href="https://www.buymeacoffee.com/amshivang">Support my work on Buy Me A Coffee! ☕</a></strong>
+  <strong><a href="https://buymeacoffee.com/amshivang">☕ Support my open-source work on Buy Me A Coffee!</a></strong>
 </div>
