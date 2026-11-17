@@ -456,7 +456,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 <div align="center">
   <p><strong>Shivang Shukla</strong></p>
-  <p><em>Cybersecurity & Digital Forensics Scholar @ UPSIFS (Uttar Pradesh State Institute of Forensic Sciences)</em></p>
+  <p><em>Cybersecurity & Digital Forensics Scholar</em></p>
 
   <p>
     <a href="https://github.com/amshivang"><img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/></a>
