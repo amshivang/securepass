@@ -3,7 +3,7 @@
   "version": "1.2.1",
   "description": "SecurePass - Minimalist Zero-Knowledge Windows Password Manager & ML Security Analyzer",
   "main": "main.js",
-  "author": "Shivang",
+  "author": "Shivang Shukla",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
