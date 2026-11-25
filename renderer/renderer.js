@@ -12,7 +12,6 @@ const state = {
   activeCategory: 'All',
   searchQuery: '',
   autoLockMinutes: 15,
-  inactivityTimer: null,
   clipboardCountdownTimer: null,
   clipboardExpiresAt: 0,
   activeDetailItem: null,
@@ -126,6 +125,8 @@ const detailCopyTotpBtn = document.getElementById('detailCopyTotpBtn');
 const detailNotesRow = document.getElementById('detailNotesRow');
 const detailNotesVal = document.getElementById('detailNotesVal');
 const detailCopyNotesBtn = document.getElementById('detailCopyNotesBtn');
+const detailCustomFieldsRow = document.getElementById('detailCustomFieldsRow');
+const detailCustomFieldsList = document.getElementById('detailCustomFieldsList');
 const detailDeleteBtn = document.getElementById('detailDeleteBtn');
 const detailEditBtn = document.getElementById('detailEditBtn');
 const detailCloseBtn = document.getElementById('detailCloseBtn');
@@ -281,16 +282,13 @@ async function initApp() {
     autoLockSelect.value = String(state.autoLockMinutes);
   }
 
-  resetInactivityTimer();
-  ['click', 'keydown', 'mousemove'].forEach(evt => {
-    window.addEventListener(evt, resetInactivityTimer, { passive: true });
-  });
-
   if (window.securePassAPI && window.securePassAPI.onVaultLocked) {
     window.securePassAPI.onVaultLocked(reason => {
-      if (state.items.length > 0 || !state.isSetupMode) {
-        lockVault();
-        showToast(reason === 'inactivity' ? 'Vault locked due to inactivity.' : 'Vault locked due to system lock/sleep.');
+      if (navTabs.style.display !== 'none' || state.items.length > 0) {
+        const msg = reason === 'inactivity'
+          ? 'Vault locked due to inactivity.'
+          : 'Vault locked due to system lock/sleep.';
+        lockVault(msg);
       }
     });
   }
@@ -440,7 +438,7 @@ async function onVaultUnlocked() {
   showToast('Vault unlocked securely.');
 }
 
-async function lockVault() {
+async function lockVault(lockMessage = 'Vault locked.') {
   await window.securePassAPI.vaultLock();
   state.items = [];
   itemsList.innerHTML = '';
@@ -464,21 +462,10 @@ async function lockVault() {
   confirmPasswordGroup.style.display = 'none';
   if (resetVaultContainer) resetVaultContainer.style.display = 'block';
   authSubmitBtn.querySelector('span').textContent = 'Unlock Vault';
-  showToast('Vault locked.');
+  showToast(typeof lockMessage === 'string' && lockMessage ? lockMessage : 'Vault locked.');
 }
 
-lockVaultBtn.addEventListener('click', lockVault);
-
-function resetInactivityTimer() {
-  if (state.inactivityTimer) clearTimeout(state.inactivityTimer);
-  if (state.autoLockMinutes <= 0) return;
-
-  state.inactivityTimer = setTimeout(() => {
-    if (navTabs.style.display !== 'none') {
-      lockVault();
-    }
-  }, state.autoLockMinutes * 60 * 1000);
-}
+lockVaultBtn.addEventListener('click', () => lockVault());
 
 // -------------------------------------------------------------
 // 2. NAVIGATION & MODAL DISMISSAL
@@ -644,6 +631,7 @@ function renderVaultItems() {
     card.setAttribute('aria-label', `View details for ${escapeHtml(item.title)}`);
 
     const iconSvg = categoryIcons[item.category] || categoryIcons['Logins'];
+    const safeId = escapeHtml(item.id);
 
     // Specific detail layout depending on category
     let detailsHtml = '';
@@ -665,7 +653,7 @@ function renderVaultItems() {
           ${item.password ? `
             <div class="detail-row">
               <span class="detail-label">${item.category === 'Cards' ? 'Card / PIN' : 'Password'}</span>
-              <span class="detail-value font-mono" id="card-pass-val-${item.id}">••••••••••••</span>
+              <span class="detail-value font-mono" id="card-pass-val-${safeId}">••••••••••••</span>
             </div>
           ` : ''}
           ${item.url ? `
@@ -675,13 +663,13 @@ function renderVaultItems() {
             </div>
           ` : ''}
           ${item.totpSecret ? `
-            <div class="totp-card-row" data-totp-id="${item.id}" data-totp-secret="${escapeHtml(item.totpSecret)}">
+            <div class="totp-card-row" data-totp-id="${safeId}" data-totp-secret="${escapeHtml(item.totpSecret)}">
               <div class="totp-left">
                 <div class="totp-badge">2FA</div>
-                <div class="totp-digits" id="totp-code-${item.id}">------</div>
-                <div class="totp-countdown" id="totp-countdown-${item.id}">--s</div>
+                <div class="totp-digits" id="totp-code-${safeId}">------</div>
+                <div class="totp-countdown" id="totp-countdown-${safeId}">--s</div>
               </div>
-              <button type="button" class="btn-card-action copy-totp-btn" data-id="${item.id}" title="Copy 2FA Code">
+              <button type="button" class="btn-card-action copy-totp-btn" data-id="${safeId}" title="Copy 2FA Code">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span>Copy</span>
               </button>
@@ -700,10 +688,10 @@ function renderVaultItems() {
             <div class="card-category">${escapeHtml(item.category)}</div>
           </div>
         </div>
-         <button type="button" class="card-menu-btn favorite-item-btn ${item.favorite ? 'is-favorite' : ''}" data-id="${item.id}" title="${item.favorite ? 'Remove from favorites' : 'Add to favorites'}" aria-label="${item.favorite ? 'Remove' : 'Add'} ${escapeHtml(item.title)} ${item.favorite ? 'from' : 'to'} favorites" aria-pressed="${item.favorite}">
+         <button type="button" class="card-menu-btn favorite-item-btn ${item.favorite ? 'is-favorite' : ''}" data-id="${safeId}" title="${item.favorite ? 'Remove from favorites' : 'Add to favorites'}" aria-label="${item.favorite ? 'Remove' : 'Add'} ${escapeHtml(item.title)} ${item.favorite ? 'from' : 'to'} favorites" aria-pressed="${item.favorite}">
            <svg width="15" height="15" viewBox="0 0 24 24" fill="${item.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
          </button>
-         <button type="button" class="card-menu-btn delete-item-btn" data-id="${item.id}" title="Delete Item" aria-label="Delete ${escapeHtml(item.title)}">
+         <button type="button" class="card-menu-btn delete-item-btn" data-id="${safeId}" title="Delete Item" aria-label="Delete ${escapeHtml(item.title)}">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </button>
       </div>
@@ -719,22 +707,22 @@ function renderVaultItems() {
             </button>
           ` : ''}
           ${item.password ? `
-            <button type="button" class="btn-card-action copy-pass-btn" data-id="${item.id}" title="Copy Password">
+            <button type="button" class="btn-card-action copy-pass-btn" data-id="${safeId}" title="Copy Password">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               <span>Pass</span>
             </button>
-            <button type="button" class="btn-card-action peek-pass-btn" data-id="${item.id}" title="Toggle Password Reveal">
-              <span id="peek-btn-text-${item.id}">Peek</span>
+            <button type="button" class="btn-card-action peek-pass-btn" data-id="${safeId}" title="Toggle Password Reveal">
+              <span id="peek-btn-text-${safeId}">Peek</span>
             </button>
           ` : ''}
           ${item.notes && item.category === 'Secure Notes' ? `
-            <button type="button" class="btn-card-action copy-notes-btn" data-id="${item.id}" title="Copy Note">
+            <button type="button" class="btn-card-action copy-notes-btn" data-id="${safeId}" title="Copy Note">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               <span>Copy</span>
             </button>
           ` : ''}
         </div>
-        <button type="button" class="btn-card-action edit-item-btn" data-id="${item.id}" title="Edit Item">
+        <button type="button" class="btn-card-action edit-item-btn" data-id="${safeId}" title="Edit Item">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           <span>Edit</span>
         </button>
@@ -1018,6 +1006,43 @@ function openItemDetailModal(item) {
     detailTotpRow.style.display = 'none';
   }
 
+  // Custom fields
+  if (detailCustomFieldsRow && detailCustomFieldsList) {
+    detailCustomFieldsList.innerHTML = '';
+    const customFields = Array.isArray(item.customFields) ? item.customFields : [];
+    if (customFields.length > 0) {
+      detailCustomFieldsRow.style.display = 'flex';
+      customFields.forEach(field => {
+        const box = document.createElement('div');
+        box.className = 'detail-field-box';
+        const meta = document.createElement('div');
+        meta.className = 'detail-field-meta';
+        const lbl = document.createElement('span');
+        lbl.className = 'detail-field-label';
+        lbl.textContent = field.name || '';
+        const val = document.createElement('span');
+        val.className = 'detail-field-value';
+        val.textContent = field.value || '';
+        meta.appendChild(lbl);
+        meta.appendChild(val);
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'btn-card-action';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', async () => {
+          const res = await window.securePassAPI.copyToClipboard(field.value || '', false);
+          if (res && res.error) showToast(res.error);
+          else showToast(`${field.name} copied!`);
+        });
+        box.appendChild(meta);
+        box.appendChild(copyBtn);
+        detailCustomFieldsList.appendChild(box);
+      });
+    } else {
+      detailCustomFieldsRow.style.display = 'none';
+    }
+  }
+
   // Notes
   if (item.notes) {
     detailNotesRow.style.display = 'flex';
@@ -1033,6 +1058,8 @@ function closeItemDetailModal() {
   if (itemDetailModal) itemDetailModal.style.display = 'none';
   if (detailPasswordVal) detailPasswordVal.textContent = '••••••••••••';
   if (detailUsernameVal) detailUsernameVal.textContent = '';
+  if (detailCustomFieldsList) detailCustomFieldsList.innerHTML = '';
+  if (detailCustomFieldsRow) detailCustomFieldsRow.style.display = 'none';
   if (detailNotesVal) detailNotesVal.textContent = '';
   if (detailTotpCode) detailTotpCode.textContent = '------';
   if (detailWebsiteLink) {
@@ -1170,7 +1197,11 @@ if (confirmDeleteBtn) {
     }
     const id = state.pendingDeleteItem.id;
     closeDeleteConfirmModal();
-    await window.securePassAPI.vaultDeleteItem(id);
+    const res = await window.securePassAPI.vaultDeleteItem(id);
+    if (res && res.error) {
+      showToast(`Delete failed: ${res.error}`);
+      return;
+    }
     await refreshVaultItems();
     showToast('Item deleted from vault.');
   });
@@ -1200,7 +1231,9 @@ function openItemModal(item = null) {
     itemId.value = '';
     itemTotp.value = '';
     renderCustomFields([]);
-    itemCategory.value = state.activeCategory !== 'All' ? state.activeCategory : 'Logins';
+    itemCategory.value = ['Logins', 'Cards', 'Secure Notes'].includes(state.activeCategory)
+      ? state.activeCategory
+      : 'Logins';
     modalStrengthMeter.textContent = 'Strength: —';
     modalStrengthMeter.style.color = 'var(--text-dim)';
   }
@@ -1421,10 +1454,15 @@ function analyzePassword(pwd) {
     commonBanner.style.display = 'none';
     adviceBanner.style.display = 'none';
     allGoodBanner.style.display = 'none';
+    if (breachDangerBanner) breachDangerBanner.style.display = 'none';
+    if (breachSafeBanner) breachSafeBanner.style.display = 'none';
     breachBtn.disabled = true;
     analyzerCopyBtn.disabled = true;
     return;
   }
+
+  if (breachDangerBanner) breachDangerBanner.style.display = 'none';
+  if (breachSafeBanner) breachSafeBanner.style.display = 'none';
 
   analyzerCopyBtn.disabled = false;
   breachBtn.disabled = false;
@@ -1454,11 +1492,14 @@ function analyzePassword(pwd) {
   if (!/[0-9]/.test(pwd)) advice.push('Include numerical digits (0–9).');
   if (!/[^a-zA-Z0-9]/.test(pwd)) advice.push('Add special symbols (!@#$%^&*).');
 
-  if (advice.length > 0 && !isCommon) {
+  if (isCommon) {
+    adviceBanner.style.display = 'none';
+    allGoodBanner.style.display = 'none';
+  } else if (advice.length > 0) {
     adviceList.innerHTML = advice.map(a => `<li>${a}</li>`).join('');
     adviceBanner.style.display = 'flex';
     allGoodBanner.style.display = 'none';
-  } else if (!isCommon) {
+  } else {
     adviceBanner.style.display = 'none';
     allGoodBanner.style.display = 'flex';
   }
@@ -1588,7 +1629,6 @@ if (autoLockSelect) {
     state.autoLockMinutes = isNaN(mins) ? 15 : mins;
     const result = await window.securePassAPI.setAutoLock(state.autoLockMinutes);
     if (result.error) { showToast(result.error); return; }
-    resetInactivityTimer();
     showToast(state.autoLockMinutes === 0 ? 'Auto-lock disabled.' : `Auto-lock set to ${state.autoLockMinutes} minute${state.autoLockMinutes > 1 ? 's' : ''}.`);
   });
 }

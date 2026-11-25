@@ -35,7 +35,10 @@ function fillLoginForm(credentials, expectedOrigin) {
   const permittedForm = element => {
     if (!element.form) return true;
     try {
-      return new URL(element.form.action || location.href, location.href).origin === expectedOrigin;
+      // Read the raw HTML attribute to avoid DOM clobbering from <input name="action">.
+      const rawAction = HTMLFormElement.prototype.getAttribute.call(element.form, 'action');
+      const actionUrl = typeof rawAction === 'string' && rawAction.trim() ? rawAction : location.href;
+      return new URL(actionUrl, location.href).origin === expectedOrigin;
     } catch (_error) {
       return false;
     }
@@ -79,8 +82,10 @@ function fillLoginForm(credentials, expectedOrigin) {
   setValue(username, credentials.username);
   setValue(password, credentials.password);
   for (const field of credentials.customFields || []) {
+    const targetName = normalize(field && field.name);
+    if (!targetName || typeof field.value !== 'string' || !field.value) continue;
     const matches = inputs.filter(element => !used.has(element) &&
-      !/new-password/.test(element.autocomplete) && metadata(element).includes(normalize(field.name)));
+      !/new-password/.test(element.autocomplete) && metadata(element).includes(targetName));
     if (matches.length === 1) setValue(matches[0], field.value);
   }
   return { filled, detected, status: detected ? 'matched' : 'no-fields' };

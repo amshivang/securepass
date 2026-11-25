@@ -1,14 +1,14 @@
 {
   "name": "securepass-desktop",
   "version": "1.2.1",
-  "description": "SecurePass - Minimalist Zero-Knowledge Windows Password Manager & ML Security Analyzer",
+  "description": "SecurePass - Minimalist Zero-Knowledge Windows Password Manager & Cryptographic Security Analyzer",
   "main": "main.js",
   "author": "Shivang Shukla",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
     "check": "node -c crypto-vault.js && node -c main.js && node -c preload.js && node -c autofill.js && node -c login-browser.js && node -c login-preload.js && node -c renderer/analyzer-engine.js && node -c renderer/renderer.js && node -c renderer/login.js",
-    "test": "npm run check && node tests/crypto-vault.test.js && node tests/hardening.test.js && node tests/analyzer.test.js && node tests/totp.test.js",
+    "test": "npm run check && node tests/crypto-vault.test.js && node tests/hardening.test.js && node tests/analyzer.test.js && node tests/totp.test.js && node tests/autofill-unit.test.js",
     "test:autofill": "xvfb-run -a electron tests/autofill.test.js",
     "pack:win": "electron-builder --win --dir",
     "dist:win": "electron-builder --win"

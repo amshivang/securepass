@@ -75,6 +75,10 @@ function createLegacyVault(password, data) {
       /username must be a string/
     );
     assert.throws(
+      () => vault.importBackup(JSON.stringify({ items: [{ id: 'bad"onclick="alert(1)', title: 'Injected' }] }), 'replace'),
+      /unsupported characters/
+    );
+    assert.throws(
       () => vault.importBackup(JSON.stringify({ items: [{ id: item.id }, { id: item.id }] }), 'replace'),
       /Duplicate item IDs/
     );

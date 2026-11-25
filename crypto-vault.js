@@ -101,6 +101,9 @@ function normalizeItem(item, { preserveId = false } = {}) {
     ? crypto.randomUUID()
     : assertStringField(item.id, 'id', 128);
   if (!id.trim()) throw new Error('Invalid item: id must not be empty.');
+  if (!/^[a-zA-Z0-9._:-]{1,128}$/.test(id)) {
+    throw new Error('Invalid item: id contains unsupported characters.');
+  }
   if (!preserveId && item.id !== undefined && item.id !== null && item.id !== '') {
     throw new Error('Invalid item: id cannot be changed.');
   }

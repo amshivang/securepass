@@ -16,7 +16,7 @@
   <p>
     <a href="https://github.com/amshivang/securepass/releases"><img src="https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D6?style=for-the-badge&logo=windows11&logoColor=white" alt="Platform"/></a>
     <a href="https://electronjs.org"><img src="https://img.shields.io/badge/Electron-34%2B-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron"/></a>
-    <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/></a>
+    <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-22%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/></a>
     <a href="#"><img src="https://img.shields.io/badge/Cryptography-AES--256--GCM-7C3AED?style=for-the-badge&logo=shield&logoColor=white" alt="Cryptography"/></a>
     <a href="#"><img src="https://img.shields.io/badge/Security-100%25%20Zero--Knowledge-059669?style=for-the-badge&logo=shield&logoColor=white" alt="Zero-Knowledge"/></a>
     <a href="https://github.com/amshivang/securepass/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.1-0284C7?style=for-the-badge&logo=github&logoColor=white" alt="Release"/></a>
@@ -327,7 +327,7 @@ securepass/
 
 ### Requirements
 - **Operating System:** Windows 10 or 11 (for desktop installer)
-- **Node.js:** Node.js 18.0 or newer
+- **Node.js:** Node.js 22.12 or newer (required by Electron 44)
 - **Package Manager:** npm 9.0 or newer
 
 ### Installation & Launch

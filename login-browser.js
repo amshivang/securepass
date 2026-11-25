@@ -18,8 +18,11 @@ class LoginBrowser {
       try {
         if (action === 'state') return this.getState(record);
         if (action === 'fill') return await this.fill(record);
-        if (action === 'reload') record.page.reload();
-        else if (action === 'external') {
+        if (action === 'reload') {
+          if (record.page.isDestroyed()) return { error: 'Login window is closed.' };
+          record.page.reload();
+        } else if (action === 'external') {
+          if (record.page.isDestroyed()) return { error: 'Login window is closed.' };
           const url = getSafeWebUrl(record.page.getURL());
           if (url) await shell.openExternal(url);
         } else return { error: 'Unknown login action.' };
@@ -31,6 +34,9 @@ class LoginBrowser {
   }
 
   getState(record) {
+    if (record.page.isDestroyed()) {
+      return { title: record.title, url: '', status: 'Login window is closed.', canFill: false };
+    }
     const url = getSafeWebUrl(record.page.getURL());
     return {
       title: record.title,
@@ -41,7 +47,9 @@ class LoginBrowser {
   }
 
   sendState(record) {
-    if (!record.window.isDestroyed()) record.window.webContents.send('login:state', this.getState(record));
+    if (!record.window.isDestroyed() && !record.page.isDestroyed()) {
+      record.window.webContents.send('login:state', this.getState(record));
+    }
   }
 
   async fill(record) {
@@ -94,6 +102,7 @@ class LoginBrowser {
     const toolbarId = window.webContents.id;
     page.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
     page.session.setPermissionCheckHandler(() => false);
+    page.session.on('will-download', event => event.preventDefault());
     const record = {
       window, page, itemId, origin: new URL(url).origin,
       title: item.title, timers: new Set(), generation: 0, status: 'Loading the saved login page…'

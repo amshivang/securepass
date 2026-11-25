@@ -1,5 +1,5 @@
 /** SecurePass desktop lifecycle, trusted IPC, and clipboard/session controls. */
-const { app, BrowserWindow, ipcMain, clipboard, shell, powerMonitor } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard, shell, powerMonitor, session } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -84,6 +84,8 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.whenReady().then(() => {
+    session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+    session.defaultSession.setPermissionCheckHandler(() => false);
     vault = new CryptoVault(getVaultPath());
     loginBrowser = new LoginBrowser(itemId => vault.isUnlocked ? vault.getItems().find(item => item.id === itemId) : null);
     try {
